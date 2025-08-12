@@ -2,10 +2,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from './src/screens/LoginScreen';
 import TripsScreen from './src/screens/TripsScreen';
+import AddTripScreen from './src/screens/AddTripScreen';
 
 export type RootStackParamList = {
   Login: undefined;
   Trips: undefined;
+  AddTrip: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -24,7 +26,13 @@ export default function App() {
           component={TripsScreen}
           options={{ title: 'Your Trips' }}
         />
+        <Stack.Screen
+          name="AddTrip"
+          component={AddTripScreen}
+          options={{ title: 'Add Trip' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
