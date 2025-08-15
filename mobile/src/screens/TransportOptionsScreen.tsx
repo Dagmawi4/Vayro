@@ -15,7 +15,7 @@ export default function TransportOptionsScreen({ route, navigation }: Props) {
   const [est, setEst] = useState<{ uber: number; lyft: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Only fetch when Uber/Lyft is selected (others are static mocks)
+  // Fetch Uber/Lyft estimates
   useEffect(() => {
     let mounted = true;
     if (mode !== 'uberlyft') {
@@ -30,6 +30,15 @@ export default function TransportOptionsScreen({ route, navigation }: Props) {
       .finally(() => mounted && setLoading(false));
     return () => { mounted = false; };
   }, [mode, airport, destination]);
+
+  // Navigate to PrefsScreen when Arrived is clicked
+  function handleArrived() {
+    navigation.navigate('PrefsScreen', {
+      airport,
+      destination,
+      mode,
+    });
+  }
 
   function renderDetails() {
     if (mode === 'uberlyft') {
@@ -71,7 +80,7 @@ export default function TransportOptionsScreen({ route, navigation }: Props) {
         </View>
       );
     }
-    // friend/family
+    // Friend/family pickup
     return (
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Friend / Family Pickup</Text>
@@ -107,8 +116,8 @@ export default function TransportOptionsScreen({ route, navigation }: Props) {
 
       <View style={{ height: 12 }} />
 
-      <Pressable style={styles.primary} onPress={() => navigation.navigate('Trips')}>
-        <Text style={styles.primaryText}>Continue</Text>
+      <Pressable style={styles.button} onPress={handleArrived}>
+        <Text style={styles.buttonText}>Arrived at Destination</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -133,7 +142,7 @@ const styles = StyleSheet.create({
 
   error:{ color:'#b91c1c' },
 
-  primary:{ backgroundColor:'#2563eb', padding:14, borderRadius:12, alignItems:'center' },
-  primaryText:{ color:'#fff', fontWeight:'700' },
+  button:{ backgroundColor:'#2563eb', padding:14, borderRadius:12, alignItems:'center' },
+  buttonText:{ color:'#fff', fontWeight:'700' },
 });
 
