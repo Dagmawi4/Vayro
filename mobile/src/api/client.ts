@@ -8,8 +8,10 @@ export const API_BASE =
     ? LAN
     : 'http://localhost:4000';
 
-export async function getHealth() {
-  const res = await fetch(`${API_BASE}/api/health`);
+export async function getPriceEstimate(airport: string, destination: string) {
+  const q = new URLSearchParams({ airport, dest: destination }).toString();
+  const res = await fetch(`${API_BASE}/api/transport/estimate-price?${q}`);
   if (!res.ok) throw new Error('Network error');
-  return res.json() as Promise<{ ok: boolean }>;
+  return res.json() as Promise<{ uber: number; lyft: number }>;
 }
+
