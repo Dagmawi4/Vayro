@@ -1,91 +1,67 @@
-import { useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, SafeAreaView } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../../App';
-import { getHealth } from '../api/client';
+import React, { useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from "react-native";
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Trips'>;
-
-const mockTrips = [
-  { id: '1', city: 'Miami, FL', dates: 'Apr 25–28', mood: 'Chill' },
-  { id: '2', city: 'Las Vegas, NV', dates: 'May 4–6', mood: 'Adventure' },
-];
-
-export default function TripsScreen({ navigation }: Props) {
-  const [apiStatus, setApiStatus] = useState<'checking' | 'ok' | 'fail'>('checking');
-
-  useEffect(() => {
-    let mounted = true;
-    getHealth()
-      .then((d) => mounted && setApiStatus(d.ok ? 'ok' : 'fail'))
-      .catch(() => mounted && setApiStatus('fail'));
-    return () => {
-      mounted = false;
-    };
-  }, []);
+export default function TripsScreen({ navigation }) {
+  // For MVP → start empty
+  const [trips, setTrips] = useState([]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Your Trips</Text>
-        <View
-          style={[
-            styles.badge,
-            apiStatus === 'ok' ? styles.badgeOk : apiStatus === 'fail' ? styles.badgeFail : styles.badgeChecking,
-          ]}
-        >
-          <Text style={styles.badgeText}>
-            API: {apiStatus === 'checking' ? 'checking…' : apiStatus.toUpperCase()}
-          </Text>
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.title}>Your Trips ✈️</Text>
       </View>
 
-      <FlatList
-        data={mockTrips}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 12 }}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{item.city}</Text>
-            <Text style={styles.cardSub}>
-              {item.dates} • {item.mood}
-            </Text>
-          </View>
-        )}
-      />
-
-      <Pressable
-        style={styles.fab}
-        onPress={() => navigation.navigate('AddTrip')}
-      >
-        <Text style={styles.fabText}>＋ Add Trip</Text>
-      </Pressable>
+      {trips.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyEmoji}>🗺️</Text>
+          <Text style={styles.emptyTitle}>No trips planned yet</Text>
+          <Text style={styles.emptySubtitle}>
+            Start your journey by adding your first trip.
+          </Text>
+          <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate("AddTrip")}>
+            <Text style={styles.addButtonText}>+ Add Your First Trip</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.tripList}>
+          {trips.map((trip, index) => (
+            <TouchableOpacity key={index} style={styles.tripCard}>
+              <Text style={styles.tripCity}>{trip.city}</Text>
+              <Text style={styles.tripDates}>{trip.dates}</Text>
+              <Text style={styles.tripMood}>{trip.mood}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  title: { fontSize: 24, fontWeight: '700' },
+  container: { flex: 1, backgroundColor: "#fff" },
+  header: { padding: 20, borderBottomWidth: 1, borderBottomColor: "#eee" },
+  title: { fontSize: 22, fontWeight: "700" },
+  
+  emptyState: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
+  emptyEmoji: { fontSize: 48, marginBottom: 12 },
+  emptyTitle: { fontSize: 20, fontWeight: "600", marginBottom: 6 },
+  emptySubtitle: { fontSize: 14, color: "#6b7280", textAlign: "center", marginBottom: 20 },
+  
+  addButton: { backgroundColor: "#2563eb", paddingVertical: 14, paddingHorizontal: 24, borderRadius: 10 },
+  addButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 
-  badge: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 9999 },
-  badgeText: { color: '#fff', fontWeight: '700', fontSize: 12 },
-  badgeOk: { backgroundColor: '#16a34a' },
-  badgeFail: { backgroundColor: '#b91c1c' },
-  badgeChecking: { backgroundColor: '#6b7280' },
-
-  card: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 14 },
-  cardTitle: { fontSize: 16, fontWeight: '700' },
-  cardSub: { color: '#6b7280', marginTop: 2 },
-
-  fab: {
-    backgroundColor: '#2563eb',
-    padding: 14,
-    borderRadius: 9999,
-    alignSelf: 'center',
-    marginTop: 16,
-    paddingHorizontal: 20,
+  tripList: { padding: 20 },
+  tripCard: {
+    backgroundColor: "#f9fafb",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  fabText: { color: '#fff', fontWeight: '700' },
+  tripCity: { fontSize: 18, fontWeight: "600" },
+  tripDates: { fontSize: 14, color: "#6b7280" },
+  tripMood: { fontSize: 14, color: "#2563eb", fontWeight: "500" },
 });

@@ -8,18 +8,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'TransportOptions'>;
 type Mode = 'uberlyft' | 'shuttle' | 'rental' | 'friend';
 
 export default function TransportOptionsScreen({ route, navigation }: Props) {
-  // ✅ null-coalesce everything so they are always strings
-  const {
-    departCountry = '',
-    departCity = '',
-    destCountry = '',
-    destCity = '',
-    mode: initialMode = 'uberlyft',
-    airport = '',
-    destination = ''
-  } = route.params || {};
+  const { airport, destination } = route.params ?? {};
+  const [mode, setMode] = useState<Mode>('uberlyft');
 
-  const [mode, setMode] = useState<Mode>(initialMode as Mode);
   const [loading, setLoading] = useState(true);
   const [est, setEst] = useState<{ uber: number; lyft: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,21 +24,18 @@ export default function TransportOptionsScreen({ route, navigation }: Props) {
     }
     setLoading(true);
     setError(null);
-    getPriceEstimate(departCity, destCity)
+    getPriceEstimate(airport, destination)
       .then((d) => mounted && setEst(d))
       .catch(() => mounted && setError('Could not load estimates'))
       .finally(() => mounted && setLoading(false));
-    return () => {
-      mounted = false;
-    };
-  }, [mode, departCity, destCity]);
+    return () => { mounted = false; };
+  }, [mode, airport, destination]);
 
+  // Navigate to PrefsScreen when Arrived is clicked
   function handleArrived() {
     navigation.navigate('PrefsScreen', {
-      departCountry,
-      departCity,
-      destCountry,
-      destCity,
+      airport,
+      destination,
       mode,
     });
   }
@@ -92,6 +80,7 @@ export default function TransportOptionsScreen({ route, navigation }: Props) {
         </View>
       );
     }
+    // Friend/family pickup
     return (
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Friend / Family Pickup</Text>
@@ -104,29 +93,27 @@ export default function TransportOptionsScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Transport Options</Text>
-      <Text style={styles.sub}>
-        {`${departCity || ''} → ${destCity || ''}`}
-      </Text>
-      <Text style={{ fontWeight: '600', marginBottom: 12 }}>
-        {`Destination: ${destCity || ''}, ${destCountry || ''}`}
-      </Text>
+      <Text style={styles.sub}>{airport} → {destination}</Text>
 
       <View style={styles.row}>
-        <Pressable style={[styles.chip, mode === 'uberlyft' && styles.chipOn]} onPress={() => setMode('uberlyft')}>
-          <Text style={[styles.chipText, mode === 'uberlyft' && styles.chipTextOn]}>Uber/Lyft</Text>
+        <Pressable style={[styles.chip, mode==='uberlyft' && styles.chipOn]} onPress={() => setMode('uberlyft')}>
+          <Text style={[styles.chipText, mode==='uberlyft' && styles.chipTextOn]}>Uber/Lyft</Text>
         </Pressable>
-        <Pressable style={[styles.chip, mode === 'shuttle' && styles.chipOn]} onPress={() => setMode('shuttle')}>
-          <Text style={[styles.chipText, mode === 'shuttle' && styles.chipTextOn]}>Shuttle</Text>
+        <Pressable style={[styles.chip, mode==='shuttle' && styles.chipOn]} onPress={() => setMode('shuttle')}>
+          <Text style={[styles.chipText, mode==='shuttle' && styles.chipTextOn]}>Shuttle</Text>
         </Pressable>
-        <Pressable style={[styles.chip, mode === 'rental' && styles.chipOn]} onPress={() => setMode('rental')}>
-          <Text style={[styles.chipText, mode === 'rental' && styles.chipTextOn]}>Car Rental</Text>
+        <Pressable style={[styles.chip, mode==='rental' && styles.chipOn]} onPress={() => setMode('rental')}>
+          <Text style={[styles.chipText, mode==='rental' && styles.chipTextOn]}>Car Rental</Text>
         </Pressable>
-        <Pressable style={[styles.chip, mode === 'friend' && styles.chipOn]} onPress={() => setMode('friend')}>
-          <Text style={[styles.chipText, mode === 'friend' && styles.chipTextOn]}>Friend/Family</Text>
+        <Pressable style={[styles.chip, mode==='friend' && styles.chipOn]} onPress={() => setMode('friend')}>
+          <Text style={[styles.chipText, mode==='friend' && styles.chipTextOn]}>Friend/Family</Text>
         </Pressable>
       </View>
 
-      <View style={{ marginTop: 12 }}>{renderDetails()}</View>
+      <View style={{ marginTop: 12 }}>
+        {renderDetails()}
+      </View>
+
       <View style={{ height: 12 }} />
 
       <Pressable style={styles.button} onPress={handleArrived}>
@@ -137,27 +124,25 @@ export default function TransportOptionsScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 24, fontWeight: '700' },
-  sub: { color: '#6b7280', marginTop: 4, marginBottom: 12 },
+  container:{ flex:1, padding:16 },
+  title:{ fontSize:24, fontWeight:'700' },
+  sub:{ color:'#6b7280', marginTop:4, marginBottom:12 },
 
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 24, paddingVertical: 10, paddingHorizontal: 14 },
-  chipOn: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  chipText: { color: '#111827', fontWeight: '600' },
-  chipTextOn: { color: '#fff' },
+  row:{ flexDirection:'row', flexWrap:'wrap', gap:8 },
+  chip:{ borderWidth:1, borderColor:'#e5e7eb', borderRadius:24, paddingVertical:10, paddingHorizontal:14 },
+  chipOn:{ backgroundColor:'#2563eb', borderColor:'#2563eb' },
+  chipText:{ color:'#111827', fontWeight:'600' },
+  chipTextOn:{ color:'#fff' },
 
-  stack: { gap: 12 },
-  card: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 14 },
-  cardTitle: { fontSize: 16, fontWeight: '700' },
-  price: { fontSize: 16, marginTop: 4 },
-  note: { color: '#6b7280', marginTop: 4 },
+  stack:{ gap:12 },
+  card:{ borderWidth:1, borderColor:'#e5e7eb', borderRadius:16, padding:14 },
+  cardTitle:{ fontSize:16, fontWeight:'700' },
+  price:{ fontSize:16, marginTop:4 },
+  note:{ color:'#6b7280', marginTop:4 },
 
-  error: { color: '#b91c1c' },
+  error:{ color:'#b91c1c' },
 
-  button: { backgroundColor: '#2563eb', padding: 14, borderRadius: 12, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: '700' },
+  button:{ backgroundColor:'#2563eb', padding:14, borderRadius:12, alignItems:'center' },
+  buttonText:{ color:'#fff', fontWeight:'700' },
 });
-
-
 

@@ -17,13 +17,12 @@ export default function CarTripScreen() {
       return;
     }
 
-    // ✅ Always include city so it carries forward
+    // Navigate directly to PrefsScreen (Trip Setup 2)
     navigation.navigate('PrefsScreen' as never, {
-      city, // 👈 pass city explicitly
       airport: '', // Not needed for car trips
       destination: destinationAddress,
       eta: eta,
-      mode: 'car',
+      mode: 'car'
     } as never);
   };
 
@@ -90,5 +89,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
 

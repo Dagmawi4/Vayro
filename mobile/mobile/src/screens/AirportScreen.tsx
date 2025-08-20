@@ -5,37 +5,17 @@ import type { RootStackParamList } from '../../App';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Airport'>;
 
-export default function AirportScreen({ navigation, route }: Props) {
-  // ✅ Safely unpack with fallbacks
-  const { 
-    departCountry = '', 
-    departCity = '', 
-    destCountry = '', 
-    destCity = '', 
-    mode = 'air' 
-  } = route.params || {};
-
+export default function AirportScreen({ navigation }: Props) {
   const [airport, setAirport] = useState('');
   const [destination, setDestination] = useState('');
 
   function handleSeeOptions() {
-    navigation.navigate('TransportOptions', { 
-      departCountry,
-      departCity,
-      destCountry,
-      destCity,
-      airport,
-      destination,
-      mode
-    });
+    navigation.navigate('TransportOptions', { airport, destination });
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Arrival Details</Text>
-      
-      {/* ✅ Ensure destCity is always a string */}
-      <Text style={styles.subtitle}>Trip to {destCity || 'your destination'}</Text> 
 
       <Text style={styles.label}>Airport</Text>
       <TextInput
@@ -66,14 +46,9 @@ export default function AirportScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   container:{ flex:1, padding:16, gap:12 },
-  title:{ fontSize:24, fontWeight:'700', marginBottom:4 },
-  subtitle:{ fontSize:16, fontWeight:'500', marginBottom:12, color:'#555' },
+  title:{ fontSize:24, fontWeight:'700', marginBottom:8 },
   label:{ fontSize:14, fontWeight:'600' },
   input:{ borderWidth:1, borderColor:'#e5e7eb', borderRadius:12, padding:12, fontSize:16 },
   button:{ backgroundColor:'#2563eb', padding:14, borderRadius:12, marginTop:8, alignItems:'center' },
   buttonText:{ color:'#fff', fontWeight:'700' },
 });
-
-
-
-
