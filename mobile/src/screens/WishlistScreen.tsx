@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Image,
   Alert,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -83,7 +84,7 @@ export default function WishlistScreen() {
           <Text style={styles.cardTitle}>{item.title}</Text>
           <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+        <Ionicons name="chevron-forward" size={22} color="#9ca3af" style={{ marginRight: 10 }} />
       </Pressable>
     );
   }
@@ -94,7 +95,7 @@ export default function WishlistScreen() {
 
       {wishlist.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="airplane" size={48} color="#9ca3af" />
+          <Ionicons name="airplane" size={52} color="#9ca3af" />
           <Text style={styles.emptyText}>No trips saved yet</Text>
           <Text style={styles.emptySubText}>
             Tap the ➕ button to add your dream trips.
@@ -106,7 +107,7 @@ export default function WishlistScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
-          contentContainerStyle={{ paddingVertical: 16 }}
+          contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
         />
       )}
 
@@ -120,7 +121,12 @@ export default function WishlistScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", paddingHorizontal: 16 },
-  header: { fontSize: 26, fontWeight: "700", marginVertical: 16 },
+  header: {
+    fontSize: 26,
+    fontWeight: "700",
+    marginTop: Platform.OS === "ios" ? 10 : 20,
+    marginBottom: 16,
+  },
   card: {
     flexDirection: "row",
     alignItems: "center",
@@ -133,7 +139,12 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  cardImage: { width: 70, height: 70, borderTopLeftRadius: 12, borderBottomLeftRadius: 12 },
+  cardImage: {
+    width: 70,
+    height: 70,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+  },
   cardContent: { flex: 1, padding: 12 },
   cardTitle: { fontSize: 16, fontWeight: "600", color: "#111827" },
   cardSubtitle: { fontSize: 14, color: "#6b7280", marginTop: 2 },
@@ -144,7 +155,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   emptyText: { fontSize: 18, fontWeight: "600", color: "#374151", marginTop: 12 },
-  emptySubText: { fontSize: 14, color: "#6b7280", marginTop: 4, textAlign: "center" },
+  emptySubText: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginTop: 4,
+    textAlign: "center",
+  },
   fab: {
     position: "absolute",
     right: 20,

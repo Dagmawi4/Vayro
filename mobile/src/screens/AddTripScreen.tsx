@@ -66,13 +66,23 @@ export default function AddTripScreen({ navigation }: Props) {
       return;
     }
 
-    navigation.navigate("Airport", {
-      departCountry,
-      departCity,
-      destCountry,
-      destCity,
-      mode,
-    });
+    if (mode === "air") {
+      navigation.navigate("Airport", {
+        departCountry,
+        departCity,
+        destCountry,
+        destCity,
+        mode,
+      });
+    } else if (mode === "car") {
+      navigation.navigate("CarTrip", {
+        departCountry,
+        departCity,
+        destCountry,
+        destCity,
+        mode,
+      });
+    }
   }
 
   return (

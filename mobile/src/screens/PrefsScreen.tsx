@@ -10,10 +10,12 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
 import { Calendar } from "react-native-calendars";
+import dayjs from "dayjs";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PrefsScreen">;
 
@@ -26,35 +28,57 @@ export default function PrefsScreen({ navigation, route }: Props) {
   const [food, setFood] = useState("");
   const [activities, setActivities] = useState("");
 
-  // Solo or Group
   const [travelSolo, setTravelSolo] = useState<null | boolean>(null);
   const [groupSize, setGroupSize] = useState("");
 
-  // Commitments
   const [hasCommitments, setHasCommitments] = useState<null | boolean>(null);
   const [commitments, setCommitments] = useState<string[]>([""]);
 
-  // Visited City Before
   const [visitedBefore, setVisitedBefore] = useState<null | boolean>(null);
   const [visitedPlaces, setVisitedPlaces] = useState<string[]>([""]);
 
-  // Calendar selection
-  const [selectedDates, setSelectedDates] = useState<{ [key: string]: any }>({});
+  // Calendar selection (range: start + end)
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null);
+  const [markedDates, setMarkedDates] = useState<{ [key: string]: any }>({});
 
   const handleDayPress = (day: { dateString: string }) => {
-    const newDates = { ...selectedDates };
-    if (newDates[day.dateString]) {
-      delete newDates[day.dateString]; // unselect if already selected
-    } else {
-      newDates[day.dateString] = {
-        selected: true,
-        selectedColor: "#2563eb",
-      };
+    if (!startDate || (startDate && endDate)) {
+      // reset selection
+      setStartDate(day.dateString);
+      setEndDate(null);
+      setMarkedDates({
+        [day.dateString]: { startingDay: true, endingDay: true, color: "#2563eb", textColor: "#fff" },
+      });
+      setDuration("1");
+    } else if (startDate && !endDate) {
+      if (dayjs(day.dateString).isBefore(dayjs(startDate))) {
+        Alert.alert("Invalid Selection", "End date must be after start date.");
+        return;
+      }
+      setEndDate(day.dateString);
+
+      const range: { [key: string]: any } = {};
+      let diff = dayjs(day.dateString).diff(dayjs(startDate), "day") + 1;
+      for (let i = 0; i < diff; i++) {
+        const date = dayjs(startDate).add(i, "day").format("YYYY-MM-DD");
+        range[date] = {
+          color: "#2563eb",
+          textColor: "#fff",
+          startingDay: i === 0,
+          endingDay: i === diff - 1,
+        };
+      }
+      setMarkedDates(range);
+      setDuration(diff.toString());
     }
-    setSelectedDates(newDates);
   };
 
   const handlePlanTrip = () => {
+    if (!duration) {
+      Alert.alert("Missing Info", "Please select trip dates.");
+      return;
+    }
     navigation.navigate("TripPlan", {
       departCountry,
       departCity,
@@ -73,23 +97,31 @@ export default function PrefsScreen({ navigation, route }: Props) {
       visitedBefore: visitedBefore
         ? visitedPlaces.filter((p) => p.trim() !== "")
         : [],
-      tripDates: Object.keys(selectedDates).sort(), // pass sorted list of selected dates
+      tripDates: startDate && endDate ? [startDate, endDate] : [startDate],
     });
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-          <Text style={styles.title}>Plan your trip</Text>
-          <Text style={styles.sub}>
-            Tell us more about your trip so we can customize your plan.
+        <ScrollView contentContainerStyle={styles.container}>
+          <Text style={styles.header}>📝 Plan Your Trip</Text>
+          <Text style={styles.subheader}>
+            Customize your trip to <Text style={styles.highlight}>{destCity}</Text>.
           </Text>
 
-          {/* Duration */}
+          {/* Calendar + Duration */}
+          <Text style={styles.label}>Select Trip Dates</Text>
+          <Calendar
+            onDayPress={handleDayPress}
+            markedDates={markedDates}
+            minDate={dayjs().format("YYYY-MM-DD")} // 🚫 block past dates
+            markingType="period"
+          />
+
           <Text style={styles.label}>Trip Duration (days)</Text>
           <TextInput
             style={styles.input}
@@ -98,10 +130,6 @@ export default function PrefsScreen({ navigation, route }: Props) {
             value={duration}
             onChangeText={setDuration}
           />
-
-          {/* Calendar Picker */}
-          <Text style={styles.label}>Select Trip Dates</Text>
-          <Calendar onDayPress={handleDayPress} markedDates={selectedDates} />
 
           {/* Budget */}
           <Text style={styles.label}>Budget ($)</Text>
@@ -116,32 +144,17 @@ export default function PrefsScreen({ navigation, route }: Props) {
           {/* Mood */}
           <Text style={styles.label}>Mood</Text>
           <View style={styles.row}>
-            <Pressable
-              style={[styles.chip, mood === "vacation" && styles.chipOn]}
-              onPress={() => setMood("vacation")}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  mood === "vacation" && styles.chipTextOn,
-                ]}
+            {["vacation", "business"].map((option) => (
+              <Pressable
+                key={option}
+                style={[styles.chip, mood === option && styles.chipOn]}
+                onPress={() => setMood(option as "vacation" | "business")}
               >
-                Vacation
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.chip, mood === "business" && styles.chipOn]}
-              onPress={() => setMood("business")}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  mood === "business" && styles.chipTextOn,
-                ]}
-              >
-                Business
-              </Text>
-            </Pressable>
+                <Text style={[styles.chipText, mood === option && styles.chipTextOn]}>
+                  {option.charAt(0).toUpperCase() + option.slice(1)}
+                </Text>
+              </Pressable>
+            ))}
           </View>
 
           {/* Food */}
@@ -165,32 +178,25 @@ export default function PrefsScreen({ navigation, route }: Props) {
           {/* Solo or Group */}
           <Text style={styles.label}>Are you traveling solo?</Text>
           <View style={styles.row}>
-            <Pressable
-              style={[styles.chip, travelSolo === true && styles.chipOn]}
-              onPress={() => setTravelSolo(true)}
-            >
-              <Text
+            {["Yes", "No"].map((option, idx) => (
+              <Pressable
+                key={option}
                 style={[
-                  styles.chipText,
-                  travelSolo === true && styles.chipTextOn,
+                  styles.chip,
+                  travelSolo === (idx === 0) && styles.chipOn,
                 ]}
+                onPress={() => setTravelSolo(idx === 0)}
               >
-                Yes
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.chip, travelSolo === false && styles.chipOn]}
-              onPress={() => setTravelSolo(false)}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  travelSolo === false && styles.chipTextOn,
-                ]}
-              >
-                No
-              </Text>
-            </Pressable>
+                <Text
+                  style={[
+                    styles.chipText,
+                    travelSolo === (idx === 0) && styles.chipTextOn,
+                  ]}
+                >
+                  {option}
+                </Text>
+              </Pressable>
+            ))}
           </View>
           {travelSolo === false && (
             <TextInput
@@ -205,32 +211,25 @@ export default function PrefsScreen({ navigation, route }: Props) {
           {/* Commitments */}
           <Text style={styles.label}>Any fixed commitments?</Text>
           <View style={styles.row}>
-            <Pressable
-              style={[styles.chip, hasCommitments === true && styles.chipOn]}
-              onPress={() => setHasCommitments(true)}
-            >
-              <Text
+            {["Yes", "No"].map((option, idx) => (
+              <Pressable
+                key={option}
                 style={[
-                  styles.chipText,
-                  hasCommitments === true && styles.chipTextOn,
+                  styles.chip,
+                  hasCommitments === (idx === 0) && styles.chipOn,
                 ]}
+                onPress={() => setHasCommitments(idx === 0)}
               >
-                Yes
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.chip, hasCommitments === false && styles.chipOn]}
-              onPress={() => setHasCommitments(false)}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  hasCommitments === false && styles.chipTextOn,
-                ]}
-              >
-                No
-              </Text>
-            </Pressable>
+                <Text
+                  style={[
+                    styles.chipText,
+                    hasCommitments === (idx === 0) && styles.chipTextOn,
+                  ]}
+                >
+                  {option}
+                </Text>
+              </Pressable>
+            ))}
           </View>
           {hasCommitments && (
             <>
@@ -238,7 +237,7 @@ export default function PrefsScreen({ navigation, route }: Props) {
                 <TextInput
                   key={index}
                   style={styles.input}
-                  placeholder={`e.g., I have a work meeting on Tuesday at 10 am`}
+                  placeholder={`Commitment ${index + 1}`}
                   value={c}
                   onChangeText={(text) => {
                     const updated = [...commitments];
@@ -251,42 +250,33 @@ export default function PrefsScreen({ navigation, route }: Props) {
                 style={styles.addButton}
                 onPress={() => setCommitments([...commitments, ""])}
               >
-                <Text style={styles.addButtonText}>+ Add another commitment</Text>
+                <Text style={styles.addButtonText}>+ Add another</Text>
               </Pressable>
             </>
           )}
 
           {/* Visited Before */}
-          <Text style={styles.label}>
-            Have you been to {destCity} before?
-          </Text>
+          <Text style={styles.label}>Have you been to {destCity} before?</Text>
           <View style={styles.row}>
-            <Pressable
-              style={[styles.chip, visitedBefore === true && styles.chipOn]}
-              onPress={() => setVisitedBefore(true)}
-            >
-              <Text
+            {["Yes", "No"].map((option, idx) => (
+              <Pressable
+                key={option}
                 style={[
-                  styles.chipText,
-                  visitedBefore === true && styles.chipTextOn,
+                  styles.chip,
+                  visitedBefore === (idx === 0) && styles.chipOn,
                 ]}
+                onPress={() => setVisitedBefore(idx === 0)}
               >
-                Yes
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.chip, visitedBefore === false && styles.chipOn]}
-              onPress={() => setVisitedBefore(false)}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  visitedBefore === false && styles.chipTextOn,
-                ]}
-              >
-                No
-              </Text>
-            </Pressable>
+                <Text
+                  style={[
+                    styles.chipText,
+                    visitedBefore === (idx === 0) && styles.chipTextOn,
+                  ]}
+                >
+                  {option}
+                </Text>
+              </Pressable>
+            ))}
           </View>
           {visitedBefore && (
             <>
@@ -307,7 +297,7 @@ export default function PrefsScreen({ navigation, route }: Props) {
                 style={styles.addButton}
                 onPress={() => setVisitedPlaces([...visitedPlaces, ""])}
               >
-                <Text style={styles.addButtonText}>+ Add another place</Text>
+                <Text style={styles.addButtonText}>+ Add another</Text>
               </Pressable>
             </>
           )}
@@ -323,19 +313,34 @@ export default function PrefsScreen({ navigation, route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#fff" },
-  title: { fontSize: 24, fontWeight: "700", marginBottom: 4 },
-  sub: { color: "#6b7280", marginBottom: 16 },
-  label: { fontSize: 14, fontWeight: "600", marginBottom: 6 },
+  safe: { flex: 1, backgroundColor: "#fff" },
+  container: { padding: 20 },
+  header: {
+    fontSize: 26,
+    fontWeight: "700",
+    marginBottom: 6,
+    textAlign: "center",
+    color: "#111827",
+  },
+  subheader: {
+    fontSize: 15,
+    color: "#6b7280",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  highlight: { fontWeight: "700", color: "#2563eb" },
+  label: { fontSize: 15, fontWeight: "600", marginBottom: 6, marginTop: 16 },
   input: {
     borderWidth: 1,
     borderColor: "#e5e7eb",
     borderRadius: 12,
-    padding: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     fontSize: 16,
-    marginBottom: 16,
+    marginBottom: 12,
+    backgroundColor: "#f9fafb",
   },
-  row: { flexDirection: "row", gap: 10, marginBottom: 16 },
+  row: { flexDirection: "row", gap: 10, marginBottom: 12 },
   chip: {
     borderWidth: 1,
     borderColor: "#e5e7eb",
@@ -348,21 +353,16 @@ const styles = StyleSheet.create({
   chipTextOn: { color: "#fff" },
   button: {
     backgroundColor: "#2563eb",
-    padding: 14,
+    paddingVertical: 16,
     borderRadius: 12,
-    marginTop: 8,
+    marginTop: 20,
     alignItems: "center",
   },
-  buttonText: { color: "#fff", fontWeight: "700" },
-  addButton: {
-    marginBottom: 16,
-    alignSelf: "flex-start",
-  },
-  addButtonText: {
-    color: "#2563eb",
-    fontWeight: "600",
-  },
+  buttonText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+  addButton: { marginBottom: 12, alignSelf: "flex-start" },
+  addButtonText: { color: "#2563eb", fontWeight: "600" },
 });
+
 
 
 
