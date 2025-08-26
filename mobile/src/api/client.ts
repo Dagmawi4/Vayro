@@ -20,3 +20,13 @@ export async function getPriceEstimate(airport: string, destination: string) {
   if (!res.ok) throw new Error('Network error');
   return res.json() as Promise<{ uber: number; lyft: number }>;
 }
+
+export async function searchFlightsAPI(params: any) {
+  const res = await fetch(`${API_BASE}/api/flights/search`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error("Network error");
+  return res.json();
+}

@@ -1,161 +1,204 @@
-import { useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../../App';
-import { getPriceEstimate } from '../api/client';
+import { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  SafeAreaView,
+  ActivityIndicator,
+  ScrollView,
+} from "react-native";
+import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../../App";
 
-type Props = NativeStackScreenProps<RootStackParamList, 'TransportOptions'>;
-type Mode = 'uberlyft' | 'shuttle' | 'rental' | 'friend';
+type Props = NativeStackScreenProps<RootStackParamList, "TransportOptions">;
+type Mode = "uberlyft" | "shuttle" | "rental" | "friend";
 
 export default function TransportOptionsScreen({ route, navigation }: Props) {
   const {
-    departCountry = '',
-    departCity = '',
-    destCountry = '',
-    destCity = '',
-    mode: initialMode = 'uberlyft',
-    airport = '',
-    destination = '',
+    departCity = "",
+    destCity = "",
+    mode: initialMode = "uberlyft",
   } = route.params || {};
 
   const [mode, setMode] = useState<Mode>(initialMode as Mode);
   const [loading, setLoading] = useState(true);
   const [est, setEst] = useState<{ uber: number; lyft: number } | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-    if (mode !== 'uberlyft') {
+    if (mode !== "uberlyft") {
       setLoading(false);
       return;
     }
     setLoading(true);
-    setError(null);
 
-    getPriceEstimate(departCity, destCity)
-      .then((d) => mounted && setEst(d))
-      .catch(() => mounted && setError('Could not load estimates'))
-      .finally(() => mounted && setLoading(false));
-
-    return () => {
-      mounted = false;
-    };
-  }, [mode, departCity, destCity]);
+    // Mock estimates
+    setTimeout(() => {
+      setEst({
+        uber: 22.5 + Math.random() * 10,
+        lyft: 20.3 + Math.random() * 8,
+      });
+      setLoading(false);
+    }, 1000);
+  }, [mode]);
 
   function handleArrived() {
-    navigation.navigate('PrefsScreen', {
-      departCountry,
+    navigation.navigate("PrefsScreen", {
       departCity,
-      destCountry,
       destCity,
       mode,
     });
   }
 
   function renderDetails() {
-    if (mode === 'uberlyft') {
-      if (loading) return <ActivityIndicator />;
-      if (error) return <Text style={styles.error}>{error}</Text>;
+    if (mode === "uberlyft") {
+      if (loading) return <ActivityIndicator size="large" color="#2563eb" />;
       if (!est) return null;
-
       return (
-        <View style={styles.stack}>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>UberX (est.)</Text>
-            <Text style={styles.price}>${est.uber.toFixed(2)}</Text>
-            <Text style={styles.note}>Pickup: Arrivals, Door 3 (mock)</Text>
-            <Text style={styles.note}>ETA: ~7 min • Driver: Toyota Camry</Text>
-          </View>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Lyft (est.)</Text>
-            <Text style={styles.price}>${est.lyft.toFixed(2)}</Text>
-            <Text style={styles.note}>Pickup: Arrivals, Door 5 (mock)</Text>
-            <Text style={styles.note}>ETA: ~5 min • Driver: Honda Accord</Text>
-          </View>
+        <View style={styles.cardDetails}>
+          <Text style={styles.cardTitle}>Uber / Lyft</Text>
+          <Text style={styles.desc}>
+            Estimated UberX: ${est.uber.toFixed(2)} | Lyft: $
+            {est.lyft.toFixed(2)}
+          </Text>
+          <Text style={styles.desc}>
+            Pickup Location: Level 2, near Door 5. Follow “Rideshare” signs. 🚖
+          </Text>
+          <Text style={styles.desc}>
+            Average Wait: 5–8 minutes. Drivers update location in real time.
+          </Text>
+          <Text style={styles.desc}>
+            Note: During peak hours (evenings & weekends), surge pricing may
+            apply.
+          </Text>
         </View>
       );
     }
-
-    if (mode === 'shuttle') {
+    if (mode === "shuttle") {
       return (
-        <View style={styles.card}>
+        <View style={styles.cardDetails}>
           <Text style={styles.cardTitle}>Airport Shuttle</Text>
-          <Text style={styles.note}>Blue Line Shuttle • ~$12/person • every 30 min</Text>
-          <Text style={styles.note}>Pickup: Terminal B, Island 2 (mock)</Text>
-          <Text style={styles.note}>First shuttle 6:00 AM, last 11:30 PM</Text>
-          <Text style={styles.note}>Pay onboard • Card accepted</Text>
+          <Text style={styles.desc}>Flat Rate: ~$12 per person</Text>
+          <Text style={styles.desc}>
+            Pickup Location: Ground Transportation Center, Level 1, outside Door
+            3. 🚌
+          </Text>
+          <Text style={styles.desc}>
+            Schedule: Runs every 30 minutes between 5:00 AM – 11:30 PM.
+          </Text>
+          <Text style={styles.desc}>
+            Average Travel Time: 40 minutes to downtown depending on traffic.
+          </Text>
+          <Text style={styles.desc}>
+            Tickets: Can be purchased at the kiosk next to the pickup area.
+          </Text>
         </View>
       );
     }
-
-    if (mode === 'rental') {
+    if (mode === "rental") {
       return (
-        <View style={styles.card}>
+        <View style={styles.cardDetails}>
           <Text style={styles.cardTitle}>Car Rental</Text>
-          <Text style={styles.note}>Enterprise Rentals • ~$45/day (economy)</Text>
-          <Text style={styles.note}>Shuttle to Rental Center every 10 min</Text>
-          <Text style={styles.note}>Location: Rental Center, Level 2 (mock)</Text>
-          <Text style={styles.note}>Bring license & credit card</Text>
+          <Text style={styles.desc}>Daily Rates: ~$45/day (Economy)</Text>
+          <Text style={styles.desc}>
+            Rental Car Center: Connected via SkyTrain from Terminal B. 🚗
+          </Text>
+          <Text style={styles.desc}>
+            Companies Available: Enterprise, Hertz, Avis, Budget, National.
+          </Text>
+          <Text style={styles.desc}>
+            Requirements: Driver’s license + credit card deposit required.
+          </Text>
+          <Text style={styles.desc}>
+            Note: Some companies offer direct pickup shuttles from Arrivals.
+          </Text>
         </View>
       );
     }
-
     return (
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Friend / Family Pickup</Text>
-        <Text style={styles.note}>Meet at Arrivals curbside • Share your flight/terminal</Text>
-        <Text style={styles.note}>Tip: Use the airport’s “Cell Phone Lot” if they arrive early</Text>
-        <Text style={styles.note}>Call/Text once you’ve collected bags</Text>
+      <View style={styles.cardDetails}>
+        <Text style={styles.cardTitle}>Family / Friend Pickup</Text>
+        <Text style={styles.desc}>
+          Pickup Location: Passenger Pickup Area, Level 1 Arrivals. 🚙
+        </Text>
+        <Text style={styles.desc}>
+          Wait Zones: Drivers can wait up to 15 minutes for free in the
+          short-term parking lot.
+        </Text>
+        <Text style={styles.desc}>
+          Meet Point: Near baggage claim exit, Door 6. Look for “Passenger
+          Pickup” signs.
+        </Text>
+        <Text style={styles.desc}>
+          Pro Tip: Call or text your ride as soon as you collect baggage to
+          avoid delays.
+        </Text>
       </View>
     );
   }
 
+  const options = [
+    {
+      key: "uberlyft",
+      label: "Uber / Lyft",
+      icon: <AntDesign name="car" size={28} color="#2563eb" />,
+    },
+    {
+      key: "shuttle",
+      label: "Shuttle",
+      icon: <MaterialCommunityIcons name="bus" size={30} color="#2563eb" />,
+    },
+    {
+      key: "rental",
+      label: "Car Rental",
+      icon: <MaterialCommunityIcons name="car-key" size={30} color="#2563eb" />,
+    },
+    {
+      key: "friend",
+      label: "Friend / Family",
+      icon: (
+        <MaterialCommunityIcons name="account-group" size={30} color="#2563eb" />
+      ),
+    },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Transport Options</Text>
-        <Text style={styles.sub}>
-          {departCity || 'Origin'} → {destCity || 'Destination'}
-        </Text>
-        <Text style={styles.destText}>
-          Arrival Airport: {airport || 'N/A'}
-        </Text>
-        <Text style={styles.destText}>
-          Destination Address: {destination || 'N/A'}
-        </Text>
+      <Text style={styles.title}>Transport Options</Text>
+      <Text style={styles.sub}>
+        {departCity || "Origin"} → {destCity || "Destination"}
+      </Text>
+
+      <View style={styles.optionsGrid}>
+        {options.map((opt) => (
+          <Pressable
+            key={opt.key}
+            style={[
+              styles.optionCard,
+              mode === opt.key && styles.optionCardActive,
+            ]}
+            onPress={() => setMode(opt.key as Mode)}
+          >
+            <View style={styles.optionRow}>
+              <Text
+                style={[
+                  styles.optionText,
+                  mode === opt.key && styles.optionTextActive,
+                ]}
+              >
+                {opt.label}
+              </Text>
+              {opt.icon}
+            </View>
+          </Pressable>
+        ))}
       </View>
 
-      <View style={styles.row}>
-        <Pressable
-          style={[styles.chip, mode === 'uberlyft' && styles.chipOn]}
-          onPress={() => setMode('uberlyft')}
-        >
-          <Text style={[styles.chipText, mode === 'uberlyft' && styles.chipTextOn]}>Uber/Lyft</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.chip, mode === 'shuttle' && styles.chipOn]}
-          onPress={() => setMode('shuttle')}
-        >
-          <Text style={[styles.chipText, mode === 'shuttle' && styles.chipTextOn]}>Shuttle</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.chip, mode === 'rental' && styles.chipOn]}
-          onPress={() => setMode('rental')}
-        >
-          <Text style={[styles.chipText, mode === 'rental' && styles.chipTextOn]}>Car Rental</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.chip, mode === 'friend' && styles.chipOn]}
-          onPress={() => setMode('friend')}
-        >
-          <Text style={[styles.chipText, mode === 'friend' && styles.chipTextOn]}>Friend/Family</Text>
-        </Pressable>
-      </View>
+      <ScrollView style={{ marginTop: 20, flex: 1 }}>{renderDetails()}</ScrollView>
 
-      <View style={{ marginTop: 12 }}>{renderDetails()}</View>
-
-      <View style={{ height: 12 }} />
       <Pressable style={styles.button} onPress={handleArrived}>
+        <AntDesign name="checkcircleo" size={20} color="#fff" />
         <Text style={styles.buttonText}>Arrived at Destination</Text>
       </Pressable>
     </SafeAreaView>
@@ -163,91 +206,65 @@ export default function TransportOptionsScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1, padding: 16, backgroundColor: "#fff" },
+  title: { fontSize: 24, fontWeight: "700", textAlign: "center", marginTop: 10 },
+  sub: { color: "#6b7280", marginTop: 4, marginBottom: 20, textAlign: "center" },
+  optionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  optionCard: {
+    width: "47%",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 14,
     padding: 16,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  sub: {
-    color: '#6b7280',
-    marginTop: 4,
-    marginBottom: 8,
-    fontSize: 16,
-  },
-  destText: {
-    fontWeight: '600',
-    marginBottom: 4,
-    fontSize: 15,
-    color: '#111827',
-  },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'center',
-  },
-  chip: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 24,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginHorizontal: 4,
-  },
-  chipOn: {
-    backgroundColor: '#2563eb',
-    borderColor: '#2563eb',
-  },
-  chipText: {
-    color: '#111827',
-    fontWeight: '600',
-  },
-  chipTextOn: {
-    color: '#fff',
-  },
-  stack: {
-    gap: 12,
-  },
-  card: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 16,
-    padding: 14,
     marginBottom: 12,
+    backgroundColor: "#f9fafb",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+  optionCardActive: {
+    backgroundColor: "#2563eb",
+    borderColor: "#2563eb",
   },
-  price: {
-    fontSize: 16,
-    marginTop: 4,
+  optionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  note: {
-    color: '#6b7280',
-    marginTop: 4,
-  },
-  error: {
-    color: '#b91c1c',
-  },
-  button: {
-    backgroundColor: '#2563eb',
-    padding: 14,
+  optionText: { fontWeight: "600", fontSize: 16, color: "#111827" },
+  optionTextActive: { color: "#fff" },
+  cardDetails: {
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
     borderRadius: 12,
-    alignItems: 'center',
+    padding: 14,
+    backgroundColor: "#f9fafb",
+    marginBottom: 20,
+  },
+  cardTitle: { fontSize: 18, fontWeight: "700", marginBottom: 6 },
+  desc: { fontSize: 15, marginBottom: 4, color: "#374151", lineHeight: 20 },
+  button: {
+    marginTop: "auto",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#2563eb",
+    padding: 16,
+    borderRadius: 12,
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: '700',
+    color: "#fff",
+    fontWeight: "700",
+    marginLeft: 8,
+    fontSize: 16,
   },
 });
+
 
 
 

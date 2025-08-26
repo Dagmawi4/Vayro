@@ -18,29 +18,35 @@ import PrefsScreen from "./src/screens/PrefsScreen";
 import CarTripScreen from "./src/screens/CarTripScreen";
 import TripPlanScreen from "./src/screens/TripPlanScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
-import WishlistScreen from "./src/screens/WishlistScreen";
+import FlightsScreen from "./src/screens/FlightsScreen";
+import FlightFormScreen from "./src/screens/FlightFormScreen";
+import FlightResultsScreen from "./src/screens/FlightResultsScreen";
+import FlightDetailsScreen from "./src/screens/FlightDetailsScreen"; // ✅ NEW
 
-// ✅ Consistent Stack Route types
+// ✅ Stack Route types
 export type RootStackParamList = {
   Auth: undefined;
   Login: undefined;
   Signup: undefined;
-  MainTabs: undefined;
+  MainTabs: { screen?: keyof TabParamList };
   AddTrip: undefined;
-
-  Airport: { departCountry: string; departCity: string; destCountry: string; destCity: string; mode: "air" | "car" };
+  Airport: {
+    departCountry: string;
+    departCity: string;
+    destCountry: string;
+    destCity: string;
+    mode: "air" | "car";
+  };
   CarTrip: { city: string };
-
   TransportOptions: {
     departCountry: string;
     departCity: string;
     destCountry: string;
     destCity: string;
     airport: string;
-    destination:string;
+    destination: string;
     mode?: string;
   };
-
   PrefsScreen: {
     departCountry: string;
     departCity: string;
@@ -48,7 +54,6 @@ export type RootStackParamList = {
     destCity: string;
     mode: string;
   };
-
   TripPlan: {
     departCountry: string;
     departCity: string;
@@ -65,20 +70,40 @@ export type RootStackParamList = {
     visitedBefore: string[];
     tripDates: string[];
   };
+
+  // ✅ Flights flow
+  FlightForm: undefined;
+  FlightResults: {
+    departure: string;
+    destination: string;
+    departureDate: string;
+    returnDate?: string | null;
+    passengers: number;
+    budget?: number;
+    allowLayover: boolean;
+  };
+  FlightDetails: {
+    id: number;
+    departure: string;
+    destination: string;
+    departureDate: string;
+    returnDate?: string | null;
+    summary: string;
+  };
 };
 
-// Tab types
+// ✅ Tab types
 export type TabParamList = {
   Home: undefined;
+  Flights: undefined;
   Trips: undefined;
-  Wishlist: undefined;
   Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
-// Bottom Tabs Layout
+// ✅ Bottom Tabs Layout
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -90,8 +115,8 @@ function MainTabs() {
           let iconName: keyof typeof Ionicons.glyphMap = "home";
 
           if (route.name === "Home") iconName = "home";
-          else if (route.name === "Trips") iconName = "airplane";
-          else if (route.name === "Wishlist") iconName = "heart";
+          else if (route.name === "Flights") iconName = "airplane";
+          else if (route.name === "Trips") iconName = "map-outline";
           else if (route.name === "Profile") iconName = "person";
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -99,40 +124,38 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Flights" component={FlightsScreen} />
       <Tab.Screen name="Trips" component={TripsScreen} />
-      <Tab.Screen name="Wishlist" component={WishlistScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
 
-// Root App
+// ✅ Root App
 export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* Entry point → Auth Screen */}
         <Stack.Screen name="Auth" component={AuthScreen} />
-
-        {/* Auth flow */}
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
-
-        {/* After login/signup → Tabs */}
         <Stack.Screen name="MainTabs" component={MainTabs} />
-
-        {/* Nested flows accessible from Trips */}
         <Stack.Screen name="AddTrip" component={AddTripScreen} />
         <Stack.Screen name="Airport" component={AirportScreen} />
-        <Stack.Screen name="TransportOptions" component={TransportOptionsScreen} />
+        <Stack.Screen
+          name="TransportOptions"
+          component={TransportOptionsScreen}
+        />
         <Stack.Screen name="PrefsScreen" component={PrefsScreen} />
         <Stack.Screen name="CarTrip" component={CarTripScreen} />
         <Stack.Screen name="TripPlan" component={TripPlanScreen} />
+
+        {/* ✅ Flights flow */}
+        <Stack.Screen name="FlightForm" component={FlightFormScreen} />
+        <Stack.Screen name="FlightResults" component={FlightResultsScreen} />
+        <Stack.Screen name="FlightDetails" component={FlightDetailsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
-
-
 

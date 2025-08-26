@@ -16,8 +16,8 @@ import {
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
-import { OPENAI_API_KEY } from "@env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE } from "../api/client"; // ✅ use backend instead of OpenAI directly
 
 // enable expand animation for Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -66,66 +66,34 @@ export default function TripPlanScreen({ route, navigation }: Props) {
 
   const fetchItinerary = async () => {
     try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      const response = await fetch(`${API_BASE}/api/trips/plan`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content: `You are a professional travel assistant. 
-Return the trip plan STRICTLY in JSON format, no markdown, no prose.
-Schema:
-[
-  {
-    "day": "Day 1 - Monday, Jan 1",
-    "morning": [
-      { "name": "Place", "description": "Details", "hours": "9 AM - 5 PM", "parking": "Nearby garage", "bookingLink": "https://...", "address": "123 Main St" }
-    ],
-    "afternoon": [ { ... } ],
-    "evening": [ { ... } ]
-  }
-]
-
-Guidelines:
-- For ${destCity}, ${destCountry}, give at least 3 detailed recommendations per slot (morning, afternoon, evening).
-- Each place must include: description (what/why), address, ⏰ hours, 🚗 parking info if relevant, and 🔗 booking link if available.
-- Prioritize iconic landmarks, must-try food spots, and local unique experiences.
-- Make descriptions engaging and detailed (2-3 sentences).
-- Ensure valid JSON only.`
-            },
-            {
-              role: "user",
-              content: `Plan a ${duration}-day trip to ${destCity}, ${destCountry}.
-Mode: ${mode === "car" ? "Car trip" : `Flight from ${departCity}, ${departCountry}`}
-Budget: ${budget}
-Mood: ${mood}
-Food preferences: ${food}
-Activities: ${activities}
-Travel style: ${travelSolo}
-Commitments: ${Array.isArray(commitments) && commitments.length ? commitments.join(", ") : "None"}
-Visited before: ${Array.isArray(visitedBefore) && visitedBefore.length ? visitedBefore.join(", ") : "No"}
-Trip dates: ${Array.isArray(tripDates) && tripDates.length ? tripDates.join(" to ") : "Flexible"}
-
-Return JSON only.`
-            }
-          ],
-          temperature: 0.85,
+          departCity,
+          departCountry,
+          destCity,
+          destCountry,
+          mode,
+          duration,
+          budget,
+          mood,
+          food,
+          activities,
+          travelSolo,
+          commitments,
+          visitedBefore,
+          tripDates,
         }),
       });
 
       const data = await response.json();
-      const text = data.choices?.[0]?.message?.content?.trim();
 
       try {
-        const parsed = JSON.parse(text);
+        const parsed = JSON.parse(data.plan); // ✅ parse the JSON string from backend
         setPlan(parsed);
       } catch (e) {
-        console.error("JSON parse error:", e, text);
+        console.error("JSON parse error:", e, data.plan);
         setPlan([]);
       }
     } catch (error) {

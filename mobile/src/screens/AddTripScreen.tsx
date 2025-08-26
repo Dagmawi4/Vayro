@@ -19,6 +19,7 @@ const countries = [
   { label: "Canada", value: "Canada" },
   { label: "Ethiopia", value: "Ethiopia" },
   { label: "France", value: "France" },
+
 ];
 
 const cities = {
@@ -26,6 +27,7 @@ const cities = {
     { label: "New York", value: "New York" },
     { label: "Los Angeles", value: "Los Angeles" },
     { label: "Chicago", value: "Chicago" },
+     { label: "Mankato", value: "Mankato" },
   ],
   Canada: [
     { label: "Toronto", value: "Toronto" },
