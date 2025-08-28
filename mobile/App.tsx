@@ -18,10 +18,22 @@ import PrefsScreen from "./src/screens/PrefsScreen";
 import CarTripScreen from "./src/screens/CarTripScreen";
 import TripPlanScreen from "./src/screens/TripPlanScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
+
+// ✅ Profile flow new screens
+import EditProfileScreen from "./src/screens/EditProfileScreen";
+import SettingsScreen from "./src/screens/SettingsScreen";
+import NotificationsScreen from "./src/screens/NotificationsScreen";
+import HelpSupportScreen from "./src/screens/HelpSupportScreen";
+import AboutAppScreen from "./src/screens/AboutAppScreen";
+
+// ✅ Flights flow
 import FlightsScreen from "./src/screens/FlightsScreen";
 import FlightFormScreen from "./src/screens/FlightFormScreen";
 import FlightResultsScreen from "./src/screens/FlightResultsScreen";
-import FlightDetailsScreen from "./src/screens/FlightDetailsScreen"; // ✅ NEW
+import FlightDetailsScreen from "./src/screens/FlightDetailsScreen";
+
+// ✅ Vira chat screen
+import ViraChatScreen from "./src/screens/ViraChatScreen";
 
 // ✅ Stack Route types
 export type RootStackParamList = {
@@ -90,6 +102,16 @@ export type RootStackParamList = {
     returnDate?: string | null;
     summary: string;
   };
+
+  // ✅ Profile flow
+  EditProfile: undefined;
+  Settings: undefined;
+  Notifications: undefined;
+  HelpSupport: undefined;
+  AboutApp: undefined;
+
+  // ✅ Vira chat
+  ViraChat: undefined;
 };
 
 // ✅ Tab types
@@ -142,10 +164,7 @@ export default function App() {
         <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Screen name="AddTrip" component={AddTripScreen} />
         <Stack.Screen name="Airport" component={AirportScreen} />
-        <Stack.Screen
-          name="TransportOptions"
-          component={TransportOptionsScreen}
-        />
+        <Stack.Screen name="TransportOptions" component={TransportOptionsScreen} />
         <Stack.Screen name="PrefsScreen" component={PrefsScreen} />
         <Stack.Screen name="CarTrip" component={CarTripScreen} />
         <Stack.Screen name="TripPlan" component={TripPlanScreen} />
@@ -154,8 +173,17 @@ export default function App() {
         <Stack.Screen name="FlightForm" component={FlightFormScreen} />
         <Stack.Screen name="FlightResults" component={FlightResultsScreen} />
         <Stack.Screen name="FlightDetails" component={FlightDetailsScreen} />
+
+        {/* ✅ Profile flow */}
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+        <Stack.Screen name="AboutApp" component={AboutAppScreen} />
+
+        {/* ✅ Vira Chat */}
+        <Stack.Screen name="ViraChat" component={ViraChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-

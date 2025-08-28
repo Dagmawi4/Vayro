@@ -1,24 +1,38 @@
+// src/screens/ProfileScreen.tsx
 import React from "react";
-import { View, Text, StyleSheet, Pressable, SafeAreaView, ScrollView, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  Image,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../../App";
+
+// ✅ Import local profile image from assets
+import profilePic from "../../assets/Profile.jpeg";
 
 export default function ProfileScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const user = {
     name: "Dagmawi Abera",
     email: "dagmawi.abera@outlook.com",
-    avatar: "https://i.pravatar.cc/150?img=3", // placeholder profile pic
+    memberSince: "Joined August 2025",
   };
 
-  function handleEditProfile() {
-    console.log("Edit profile tapped");
-  }
-
-  function handleSettings() {
-    console.log("Settings tapped");
-  }
-
   function handleLogout() {
-    console.log("Logout tapped");
+    // ✅ Reset navigation stack and go to AuthScreen
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Auth" }],
+    });
   }
 
   return (
@@ -29,42 +43,43 @@ export default function ProfileScreen() {
 
         {/* User Info Card */}
         <View style={styles.profileCard}>
-          <Image source={{ uri: user.avatar }} style={styles.avatar} />
+          <Image source={profilePic} style={styles.avatar} />
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>{user.name}</Text>
             <Text style={styles.email}>{user.email}</Text>
+            <Text style={styles.memberSince}>{user.memberSince}</Text>
           </View>
-          <Pressable onPress={handleEditProfile}>
-            <Ionicons name="create-outline" size={22} color="#2563eb" />
-          </Pressable>
         </View>
+
+        {/* Divider */}
+        <View style={styles.divider} />
 
         {/* Options List */}
         <View style={styles.section}>
           <OptionRow
             icon="person-circle-outline"
             label="Edit Profile"
-            onPress={handleEditProfile}
+            onPress={() => navigation.navigate("EditProfile")}
           />
           <OptionRow
             icon="settings-outline"
             label="Settings"
-            onPress={handleSettings}
+            onPress={() => navigation.navigate("Settings")}
           />
           <OptionRow
             icon="notifications-outline"
             label="Notifications"
-            onPress={() => console.log("Notifications tapped")}
+            onPress={() => navigation.navigate("Notifications")}
           />
           <OptionRow
             icon="help-circle-outline"
             label="Help & Support"
-            onPress={() => console.log("Help tapped")}
+            onPress={() => navigation.navigate("HelpSupport")}
           />
           <OptionRow
             icon="information-circle-outline"
             label="About App"
-            onPress={() => console.log("About tapped")}
+            onPress={() => navigation.navigate("AboutApp")}
           />
         </View>
 
@@ -89,7 +104,12 @@ function OptionRow({
 }) {
   return (
     <Pressable style={styles.optionRow} onPress={onPress}>
-      <Ionicons name={icon} size={22} color="#374151" style={{ marginRight: 12 }} />
+      <Ionicons
+        name={icon}
+        size={22}
+        color="#374151"
+        style={{ marginRight: 12 }}
+      />
       <Text style={styles.optionText}>{label}</Text>
       <Ionicons
         name="chevron-forward"
@@ -108,19 +128,33 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#f9fafb",
-    padding: 16,
-    borderRadius: 12,
+    padding: 20,
+    borderRadius: 16,
     marginHorizontal: 16,
-    marginBottom: 20,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 2,
   },
-  avatar: { width: 60, height: 60, borderRadius: 30, marginRight: 12 },
-  name: { fontSize: 18, fontWeight: "600", color: "#111827" },
-  email: { fontSize: 14, color: "#6b7280" },
+  avatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    marginRight: 14,
+    borderWidth: 2,
+    borderColor: "#2563eb",
+  },
+  name: { fontSize: 20, fontWeight: "700", color: "#111827" },
+  email: { fontSize: 14, color: "#6b7280", marginTop: 2 },
+  memberSince: { fontSize: 12, color: "#9ca3af", marginTop: 4 },
+  divider: {
+    height: 1,
+    backgroundColor: "#e5e7eb",
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
   section: { marginHorizontal: 16, marginBottom: 24 },
   optionRow: {
     flexDirection: "row",
@@ -148,3 +182,8 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
+
+export default ProfileScreen;
+
+
+

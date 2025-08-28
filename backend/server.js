@@ -183,6 +183,41 @@ Generate a structured, professional recommendation with these sections:
   }
 });
 
+// 🆕 Vira General Chat
+app.post("/api/vira/chat", async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    const prompt = `
+You are Vira, a friendly and knowledgeable AI travel assistant inside the Vayro app. 
+- Primary role: Answer travel-related questions (destinations, tips, itineraries, cultural insights). 
+- Secondary role: You can also answer general knowledge questions if asked. 
+- Style: Professional, concise, yet approachable. 
+- Always avoid markdown headers (#, ##, ###). Use plain text, line breaks, and bullet points where needed.
+
+User: ${message}
+`;
+
+    const aiRes = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.8,
+    });
+
+    const reply = aiRes.choices[0].message?.content?.trim() || "Sorry, I don’t have an answer right now.";
+
+    res.json({ reply });
+  } catch (err) {
+    console.error("Vira chat error:", err.response?.data || err.message);
+    res.status(500).json({ error: "Chat request failed" });
+  }
+});
+
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () =>
   console.log(`API running on http://localhost:${PORT}`)
