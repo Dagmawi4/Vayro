@@ -1,93 +1,82 @@
-# Vayro Architecture
+# 📐 Vayro Architecture
 
-This document provides a high-level overview of Vayro’s system architecture, illustrating how the frontend, backend, database/auth services, and third-party APIs interact to deliver seamless, end-to-end travel planning.
+This document provides a high-level overview of **Vayro’s mobile architecture**, showing how the **React Native frontend**, **Node.js backend**, **data services**, and **third-party APIs** interact to deliver an AI-powered, end-to-end travel planning experience.
 
 ---
 
 ## 1. Components
 
-### 1.1 Frontend (Next.js + Tailwind CSS)
+### 1.1 Mobile Frontend (React Native + Expo)
 
-* **Hosting/Rendering**: Vercel, with hybrid SSR/CSR for performance.
-* **Pages & Routes**:
+* **Framework**: React Native (Expo managed workflow)  
+* **Navigation**: React Navigation (Stack + Bottom Tabs)  
+* **Screens**:
+  - `Auth` → Login / Signup flow
+  - `Home` → Recommendations, moods, quick picks
+  - `Flights` → Flight search (Amadeus + AI summary)
+  - `Trips` → AI itinerary generation
+  - `Profile` → User info, settings, preferences
+  - `Vira Chat` → AI assistant for travel/general queries
+* **State Management**: React Hooks + AsyncStorage (for lightweight persistence)
+* **Styling**: React Native Stylesheet, with modern UI patterns
 
-  * `/login`: Email/password authentication UI
-  * `/dashboard`: User homepage showing saved/upcoming trips
-  * `/airport`: Airport → transport flow (price estimates)
-  * `/trip`: Trip customization & plan generation
-* **State Management**: React Context or built‑in Next.js data fetching hooks
-* **UI Library**: Tailwind CSS for styling, custom components (e.g., `TransportSelector`, `ItineraryCard`)
+---
 
 ### 1.2 Backend (Node.js + Express)
 
-* **Server**: Express app (in `backend/server.js`)
-* **Routes** (`backend/routes/`):
+* **Server**: Express app (`backend/server.js`)
+* **Routes**:
+  - **`/api/auth`** → placeholder for login/signup (future Firebase/Supabase integration)
+  - **`/api/transport/estimate-price`** → returns Uber/Lyft mock estimates
+  - **`/api/trips/plan`** → generates daily trip plan via OpenAI
+  - **`/api/flights/search`** → Amadeus flight offers + AI summary
+  - **`/api/vira/chat`** → general-purpose chat endpoint powered by OpenAI
+* **Middleware**: CORS, JSON parsing, logging (Morgan)
 
-  * **`/api/auth`**: placeholder for login/logout (to be replaced by Firebase triggers)
-  * **`/api/transport/estimate-price`**: GET stub returning Uber/Lyft mock estimates
-  * **`/api/itinerary/plan-trip`**: POST stub invoking OpenAI to generate a daily plan
-* **Middleware**: JSON parsing, CORS, logging
+---
 
-### 1.3 Database & Authentication
+### 1.3 Database & Authentication (Planned)
 
-* **Auth**: Firebase Auth (Email/Password, future OAuth providers)
-* **Database**: Firestore (or Supabase) to store user profiles, preferences, and trip data
-* **Security**: Firestore rules or Supabase policies enforcing per-user access
+* **Auth**: Firebase Auth or Supabase Auth  
+* **Database**: Firestore or Supabase for user profiles, preferences, and trips  
+* **Security**: Per-user rules to ensure only logged-in users access their data  
+
+(Current MVP uses in-memory + AsyncStorage; persistent DB coming in next phase.)
+
+---
 
 ### 1.4 Third-Party APIs
 
-* **OpenAI GPT-4 API**: Generates the itinerary based on user inputs (mood, duration, activities)
-* **Google Maps API**: Geocoding, directions, distance matrix
-* **Uber & Lyft APIs**: Real-time ride price estimates & airport pickup locations
-* **Yelp (or Foursquare) API**: Restaurant data, ratings, top dishes
-* **Activity Booking APIs** (e.g., Viator): Real-time availability and booking links
+* **OpenAI GPT-4** → Powers trip generation, flight summaries, and **Vira AI assistant**  
+* **Amadeus API** → Real-time flight search and pricing  
+* **Uber/Lyft (mock, future live)** → Transport price estimates and pickups  
+* **Google Maps API** → Geocoding, directions, distance/time  
+* **Yelp / Foursquare API** → Restaurants, ratings, top dishes  
+* **Viator / Booking APIs** → Activities & reservations  
 
 ---
 
 ## 2. Data Flow Diagram
 
 ```text
-                ┌─────────────────────┐
-                │  Mobile/Web Client  │
-                └─────────┬───────────┘
-                          │
-                          ▼
-                ┌─────────────────────┐
-                │    Next.js Frontend │
-                └─────────┬───────────┘
-                          │
-                client  │ │  server
-               interaction│  rendering/data-fetch
-                          ▼
-                ┌─────────────────────┐            ┌──────────────────────────┐
-                │  Express API Server │◀──────────▶│  Firebase Auth & DB     │
-                │  (backend/server.js)│            │  (Auth + Firestore)     │
-                └─────────┬───────────┘            └──────────────────────────┘
-                          │
-         Route handlers   │
-   estimate-price / plan-trip
-                          ▼
-    ┌─────────────────────────────────────────────────────┐
-    │              Third-Party Services                 │
-    │  • OpenAI GPT-4              • Google Maps         │
-    │  • Uber/Lyft APIs            • Yelp/Foursquare     │
-    │  • Activity Booking APIs                          │
-    └─────────────────────────────────────────────────────┘
-```
+          ┌──────────────────────┐
+          │   React Native App   │
+          │  (Expo, iOS/Android) │
+          └──────────┬───────────┘
+                     │
+                     ▼
+          ┌──────────────────────┐
+          │   Express API Server │
+          │  (backend/server.js) │
+          └──────────┬───────────┘
+                     │
+   ┌─────────────────┼─────────────────┐
+   ▼                 ▼                 ▼
+Firebase/Supabase   OpenAI GPT-4     Amadeus API
+(Auth + DB)         (Trips, Vira)    (Flights)
 
----
+       ▼                 ▼                 ▼
+ Google Maps API     Yelp/Foursquare     Uber/Lyft APIs
+ (Routes, ETA)       (Food, Reviews)     (Transport est.)
 
-## 3. Deployment & CI/CD
 
-* **Frontend**: Auto-deploy on push to `main` via Vercel
-* **Backend**: Deploy Express server on a managed Node.js platform (e.g., Heroku, DigitalOcean App Platform)
-* **Environment Variables**: Stored securely (OpenAI key, Firebase config, API keys)
-* **Testing**: Unit tests for each route; end-to-end tests for core flows with Playwright or Cypress
-
----
-
-## 4. Future Enhancements
-
-* GraphQL layer to consolidate data fetching
-* WebSockets for real-time notifications (e.g., ride arrival alerts)
-* Microservices split: separate pricing & itinerary-generation services
