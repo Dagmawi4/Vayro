@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+
 export default function SettingsScreen() {
   // State for toggles
   const [darkMode, setDarkMode] = useState(false);
@@ -197,3 +198,4 @@ const styles = StyleSheet.create({
   label: { fontSize: 16, color: "#111827" },
   rightText: { fontSize: 14, color: "#6b7280", marginLeft: "auto", marginRight: 6 },
 });
+

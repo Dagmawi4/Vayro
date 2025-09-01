@@ -1,10 +1,9 @@
-// src/screens/TripPlanScreen.tsx
-import React, { useEffect, useState } from "react";
+// src/screens/SavedTripDetailsScreen.tsx
+import React, { useState } from "react";
 import {
   SafeAreaView,
   Text,
   StyleSheet,
-  ActivityIndicator,
   ScrollView,
   View,
   Pressable,
@@ -16,27 +15,25 @@ import {
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_BASE } from "../api/client";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 
-// enable expand animation for Android
+// Enable expand animation for Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-type Props = NativeStackScreenProps<RootStackParamList, "TripPlan">;
+type Props = NativeStackScreenProps<RootStackParamList, "SavedTripDetails">;
 
 interface Place {
   name: string;
   description: string;
   type?: string;
   priceRange?: string;
-  hours?: string | null;
-  parking?: string | null;
-  website?: string | null;
-  phone?: string | null;
+  hours?: string;
+  parking?: string;
+  website?: string;
+  phone?: string;
   address?: string;
 }
 
@@ -54,102 +51,15 @@ interface BudgetSummary {
   [day: string]: { estimated: number; budget: number; status: string };
 }
 
-export default function TripPlanScreen({ route, navigation }: Props) {
-  const {
-    departCity,
-    departCountry,
-    destCity,
-    destCountry,
-    mode,
-    duration,
-    budget,
-    mood,
-    food,
-    activities,
-    travelSolo,
-    commitments,
-    visitedBefore,
-    tripDates,
-  } = route.params;
+export default function SavedTripDetailsScreen({ route }: Props) {
+  const { destCity, destCountry, duration, tripDates, plan, budgetSummary } =
+    route.params;
 
-  const [loading, setLoading] = useState(true);
-  const [plan, setPlan] = useState<DayPlan[]>([]);
-  const [budgetSummary, setBudgetSummary] = useState<BudgetSummary>({});
   const [expandedDays, setExpandedDays] = useState<{ [key: string]: boolean }>({});
-
-  const fetchItinerary = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/api/trips/plan`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          departCity,
-          departCountry,
-          destCity,
-          destCountry,
-          mode,
-          duration,
-          budget,
-          mood,
-          food,
-          activities,
-          travelSolo,
-          commitments,
-          visitedBefore,
-          tripDates,
-        }),
-      });
-
-      const data = await response.json();
-
-      try {
-        const parsed = JSON.parse(data.plan);
-        if (Array.isArray(parsed)) {
-          setPlan(parsed);
-        } else {
-          setPlan([]);
-        }
-        if (data.budgetSummary) setBudgetSummary(data.budgetSummary);
-      } catch (e) {
-        console.error("JSON parse error:", e, data.plan);
-        setPlan([]);
-      }
-    } catch (error) {
-      console.error(error);
-      setPlan([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchItinerary();
-  }, []);
 
   const toggleDay = (day: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedDays((prev) => ({ ...prev, [day]: !prev[day] }));
-  };
-
-  const handleSaveTrip = async () => {
-    try {
-      const savedTripsRaw = await AsyncStorage.getItem("savedTrips");
-      const savedTrips = savedTripsRaw ? JSON.parse(savedTripsRaw) : [];
-      const newTrip = {
-        id: Date.now(),
-        destCity,
-        destCountry,
-        duration,
-        tripDates,
-        plan,
-        budgetSummary,
-      };
-      await AsyncStorage.setItem("savedTrips", JSON.stringify([...savedTrips, newTrip]));
-      navigation.navigate("SavedTripDetails", newTrip);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("❌ Error", "Could not save trip.");
-    }
   };
 
   const openMaps = (address: string) => {
@@ -160,8 +70,10 @@ export default function TripPlanScreen({ route, navigation }: Props) {
     Linking.openURL(url);
   };
 
-  const openCall = (phone: string) => {
-    Linking.openURL(`tel:${phone}`);
+  const callNumber = (phone: string) => {
+    if (phone && phone !== "No phone available") {
+      Linking.openURL(`tel:${phone}`);
+    }
   };
 
   const renderOptions = (places: Place[]) => {
@@ -174,16 +86,25 @@ export default function TripPlanScreen({ route, navigation }: Props) {
         {place.hours && <Text style={styles.meta}>⏰ {place.hours}</Text>}
         {place.parking && <Text style={styles.meta}>🚗 {place.parking}</Text>}
 
-        {place.website && (
+        {/* Website */}
+        {place.website && place.website !== "No website available" ? (
           <Text style={styles.link} onPress={() => Linking.openURL(place.website!)}>
             🔗 Website
           </Text>
+        ) : (
+          <Text style={styles.meta}>No website available</Text>
         )}
-        {place.phone && (
-          <Text style={styles.link} onPress={() => openCall(place.phone!)}>
+
+        {/* Phone */}
+        {place.phone && place.phone !== "No phone available" ? (
+          <Text style={styles.link} onPress={() => callNumber(place.phone!)}>
             📞 Call: {place.phone}
           </Text>
+        ) : (
+          <Text style={styles.meta}>No phone available</Text>
         )}
+
+        {/* Address */}
         {place.address && (
           <Text style={styles.link} onPress={() => openMaps(place.address!)}>
             🗺️ Directions
@@ -224,16 +145,12 @@ export default function TripPlanScreen({ route, navigation }: Props) {
                           <strong>${opt.name}</strong> - ${opt.description}<br/>
                           ${opt.type ? `Type: ${opt.type}<br/>` : ""}
                           ${opt.priceRange ? `Price: ${opt.priceRange}<br/>` : ""}
-                          ${
-                            opt.website && opt.website !== "No website available"
-                              ? `<a href="${opt.website}">Website</a><br/>`
-                              : ""
-                          }
-                          ${
-                            opt.phone && opt.phone !== "No phone available"
-                              ? `Phone: ${opt.phone}<br/>`
-                              : ""
-                          }
+                          ${opt.website && opt.website !== "No website available"
+                            ? `<a href="${opt.website}">Website</a><br/>`
+                            : ""}
+                          ${opt.phone && opt.phone !== "No phone available"
+                            ? `Phone: ${opt.phone}<br/>`
+                            : ""}
                           ${opt.address ? `Address: ${opt.address}<br/>` : ""}
                         </li>
                       `
@@ -297,78 +214,61 @@ export default function TripPlanScreen({ route, navigation }: Props) {
           </Text>
         </View>
 
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#2563eb" />
-            <Text style={styles.loadingText}>Generating itinerary...</Text>
+        {/* Daily Itinerary */}
+        {plan.map((day: DayPlan, idx: number) => {
+          const isOpen = expandedDays[day.day];
+          return (
+            <View key={idx} style={styles.dayCard}>
+              <Pressable onPress={() => toggleDay(day.day)} style={styles.dayHeader}>
+                <Text style={styles.dayTitle}>{day.day}</Text>
+                <Text style={styles.toggle}>{isOpen ? "−" : "+"}</Text>
+              </Pressable>
+              {isOpen && (
+                <View style={styles.dayContent}>
+                  {day.schedule.map((slot, sIdx) => (
+                    <View key={sIdx} style={styles.slotSection}>
+                      <Text style={styles.section}>🕒 {slot.time}</Text>
+                      {renderOptions(slot.options)}
+                    </View>
+                  ))}
+
+                  {/* Daily budget summary */}
+                  {budgetSummary?.[day.day] && (
+                    <View style={styles.budgetCard}>
+                      <Text style={styles.budgetText}>
+                        💵 Estimated Spend: ${budgetSummary[day.day].estimated}
+                      </Text>
+                      <Text style={styles.budgetStatus}>
+                        {budgetSummary[day.day].status}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+          );
+        })}
+
+        {/* Trip-wide summary */}
+        {budgetSummary?.["total"] && (
+          <View style={styles.totalBudgetCard}>
+            <Text style={styles.totalBudgetTitle}>💰 Trip Summary</Text>
+            <Text style={styles.budgetText}>
+              Total Estimated: ${budgetSummary["total"].estimated}
+            </Text>
+            <Text style={styles.budgetText}>
+              Budget: ${budgetSummary["total"].budget}
+            </Text>
+            <Text style={styles.budgetStatus}>
+              {budgetSummary["total"].status}
+            </Text>
           </View>
-        ) : (
-          <>
-            {Array.isArray(plan) && plan.length > 0 ? (
-              plan.map((day, idx) => {
-                const isOpen = expandedDays[day.day];
-                return (
-                  <View key={idx} style={styles.dayCard}>
-                    <Pressable onPress={() => toggleDay(day.day)} style={styles.dayHeader}>
-                      <Text style={styles.dayTitle}>{day.day}</Text>
-                      <Text style={styles.toggle}>{isOpen ? "−" : "+"}</Text>
-                    </Pressable>
-                    {isOpen && (
-                      <View style={styles.dayContent}>
-                        {day.schedule.map((slot, sIdx) => (
-                          <View key={sIdx} style={styles.slotSection}>
-                            <Text style={styles.section}>🕒 {slot.time}</Text>
-                            {renderOptions(slot.options)}
-                          </View>
-                        ))}
-
-                        {budgetSummary[day.day] && (
-                          <View style={styles.budgetCard}>
-                            <Text style={styles.budgetText}>
-                              💵 Estimated Spend: ${budgetSummary[day.day].estimated}
-                            </Text>
-                            <Text style={styles.budgetStatus}>
-                              {budgetSummary[day.day].status}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    )}
-                  </View>
-                );
-              })
-            ) : (
-              <Text style={{ textAlign: "center", marginTop: 20 }}>
-                ⚠️ No itinerary could be generated.
-              </Text>
-            )}
-
-            {budgetSummary["total"] && (
-              <View style={styles.totalBudgetCard}>
-                <Text style={styles.totalBudgetTitle}>💰 Trip Summary</Text>
-                <Text style={styles.budgetText}>
-                  Total Estimated: ${budgetSummary["total"].estimated}
-                </Text>
-                <Text style={styles.budgetText}>
-                  Budget: ${budgetSummary["total"].budget}
-                </Text>
-                <Text style={styles.budgetStatus}>
-                  {budgetSummary["total"].status}
-                </Text>
-              </View>
-            )}
-
-            {/* Save Trip Button */}
-            <Pressable style={styles.saveButton} onPress={handleSaveTrip}>
-              <Text style={styles.saveText}>❤️ Save This Trip</Text>
-            </Pressable>
-
-            {/* Download PDF Button */}
-            <Pressable style={styles.pdfButton} onPress={generatePDF}>
-              <Text style={styles.pdfText}>⬇️ Download / Share PDF</Text>
-            </Pressable>
-          </>
         )}
+
+        {/* Download PDF Button */}
+        <Pressable style={styles.pdfButton} onPress={generatePDF}>
+          <Text style={styles.pdfText}>⬇️ Download / Share PDF</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -386,13 +286,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: { fontSize: 24, fontWeight: "700", color: "#fff" },
   heroSub: { fontSize: 16, color: "#e0e7ff", marginTop: 4 },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 50,
-  },
-  loadingText: { marginTop: 10, fontSize: 16, color: "#6b7280" },
+
   dayCard: {
     borderWidth: 1,
     borderColor: "#e5e7eb",
@@ -417,7 +311,9 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     color: "#111",
   },
+
   slotSection: { marginBottom: 16 },
+
   placeCard: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -435,6 +331,7 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     marginTop: 4,
   },
+
   budgetCard: {
     backgroundColor: "#f1f5f9",
     padding: 10,
@@ -443,6 +340,7 @@ const styles = StyleSheet.create({
   },
   budgetText: { fontSize: 14, fontWeight: "600", color: "#111" },
   budgetStatus: { fontSize: 13, color: "#444", marginTop: 2 },
+
   totalBudgetCard: {
     backgroundColor: "#dbeafe",
     padding: 14,
@@ -450,37 +348,21 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: "center",
   },
-  totalBudgetTitle: { fontSize: 16, fontWeight: "700", marginBottom: 6, color: "#111" },
-  saveButton: {
-    backgroundColor: "#ef4444",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 20,
+  totalBudgetTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 6,
+    color: "#111",
   },
-  saveText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+
   pdfButton: {
     backgroundColor: "#10b981",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 30,
   },
   pdfText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

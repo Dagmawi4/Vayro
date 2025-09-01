@@ -1,18 +1,56 @@
+// src/screens/LoginScreen.tsx
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, SafeAreaView } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  SafeAreaView,
+  Alert,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 
 export default function LoginScreen({ navigation }: Props) {
+  const [name, setName] = useState("");
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
+
+  const handleLogin = async () => {
+    if (!name || !emailOrPhone) {
+      Alert.alert("Missing Info", "Please enter your name and email.");
+      return;
+    }
+
+    const userData = {
+      name,
+      email: emailOrPhone,
+      photo: null, // later decide in ProfileScreen if it's you → show Profile.jpeg
+    };
+
+    await AsyncStorage.setItem("user", JSON.stringify(userData));
+
+    navigation.replace("MainTabs");
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Welcome Back 👋</Text>
-      <Text style={styles.subtitle}>Log in to continue your journey with Vayro</Text>
+      <Text style={styles.subtitle}>
+        Log in to continue your journey with Vayro
+      </Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Name"
+        value={name}
+        onChangeText={setName}
+        autoCapitalize="words"
+      />
 
       <TextInput
         style={styles.input}
@@ -31,12 +69,15 @@ export default function LoginScreen({ navigation }: Props) {
         onChangeText={setPassword}
       />
 
-      <Pressable style={styles.button} onPress={() => navigation.replace("MainTabs")}>
+      <Pressable style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Continue</Text>
       </Pressable>
 
       <Pressable onPress={() => navigation.navigate("Signup")}>
-        <Text style={styles.link}>Don’t have an account? <Text style={{ fontWeight: "600", color: "#2563eb" }}>Sign up</Text></Text>
+        <Text style={styles.link}>
+          Don’t have an account?{" "}
+          <Text style={{ fontWeight: "600", color: "#2563eb" }}>Sign up</Text>
+        </Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -94,4 +135,3 @@ const styles = StyleSheet.create({
     color: "#374151",
   },
 });
-

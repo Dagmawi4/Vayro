@@ -13,127 +13,90 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TransportOptions">;
-type Mode = "uberlyft" | "shuttle" | "rental" | "friend";
+type Mode = "uberlyft" | "shuttle" | "rental" | "friend" | null;
+
+type TransportResponse = {
+  title: string;
+  details: string[];
+  meta?: Record<string, any>;
+};
 
 export default function TransportOptionsScreen({ route, navigation }: Props) {
   const {
     departCity = "",
     destCity = "",
-    mode: initialMode = "uberlyft",
+    airport = "",
+    airportCity = "",
+    airportCountry = "",
+    destination = "",
+    undecided = false,
   } = route.params || {};
 
-  const [mode, setMode] = useState<Mode>(initialMode as Mode);
-  const [loading, setLoading] = useState(true);
-  const [est, setEst] = useState<{ uber: number; lyft: number } | null>(null);
+  const [mode, setMode] = useState<Mode>(null);
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<TransportResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
+  // 🔎 Fetch transport option when mode changes
   useEffect(() => {
-    if (mode !== "uberlyft") {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
+    if (!mode) return;
 
-    // Mock estimates
-    setTimeout(() => {
-      setEst({
-        uber: 22.5 + Math.random() * 10,
-        lyft: 20.3 + Math.random() * 8,
-      });
-      setLoading(false);
-    }, 1000);
+    async function fetchOption() {
+      try {
+        setLoading(true);
+        setError(null);
+        setData(null);
+
+        const res = await fetch("http://10.0.0.128:4000/api/transport/options", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mode,
+            airport,
+            airportCity,
+            airportCountry,
+            destination,
+            undecided,
+          }),
+        });
+
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed to fetch");
+
+        setData(json);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchOption();
   }, [mode]);
 
   function handleArrived() {
     navigation.navigate("PrefsScreen", {
       departCity,
       destCity,
-      mode,
+      mode: mode || "skipped", // pass skipped if no selection
     });
   }
 
   function renderDetails() {
-    if (mode === "uberlyft") {
-      if (loading) return <ActivityIndicator size="large" color="#2563eb" />;
-      if (!est) return null;
-      return (
-        <View style={styles.cardDetails}>
-          <Text style={styles.cardTitle}>Uber / Lyft</Text>
-          <Text style={styles.desc}>
-            Estimated UberX: ${est.uber.toFixed(2)} | Lyft: $
-            {est.lyft.toFixed(2)}
-          </Text>
-          <Text style={styles.desc}>
-            Pickup Location: Level 2, near Door 5. Follow “Rideshare” signs. 🚖
-          </Text>
-          <Text style={styles.desc}>
-            Average Wait: 5–8 minutes. Drivers update location in real time.
-          </Text>
-          <Text style={styles.desc}>
-            Note: During peak hours (evenings & weekends), surge pricing may
-            apply.
-          </Text>
-        </View>
-      );
-    }
-    if (mode === "shuttle") {
-      return (
-        <View style={styles.cardDetails}>
-          <Text style={styles.cardTitle}>Airport Shuttle</Text>
-          <Text style={styles.desc}>Flat Rate: ~$12 per person</Text>
-          <Text style={styles.desc}>
-            Pickup Location: Ground Transportation Center, Level 1, outside Door
-            3. 🚌
-          </Text>
-          <Text style={styles.desc}>
-            Schedule: Runs every 30 minutes between 5:00 AM – 11:30 PM.
-          </Text>
-          <Text style={styles.desc}>
-            Average Travel Time: 40 minutes to downtown depending on traffic.
-          </Text>
-          <Text style={styles.desc}>
-            Tickets: Can be purchased at the kiosk next to the pickup area.
-          </Text>
-        </View>
-      );
-    }
-    if (mode === "rental") {
-      return (
-        <View style={styles.cardDetails}>
-          <Text style={styles.cardTitle}>Car Rental</Text>
-          <Text style={styles.desc}>Daily Rates: ~$45/day (Economy)</Text>
-          <Text style={styles.desc}>
-            Rental Car Center: Connected via SkyTrain from Terminal B. 🚗
-          </Text>
-          <Text style={styles.desc}>
-            Companies Available: Enterprise, Hertz, Avis, Budget, National.
-          </Text>
-          <Text style={styles.desc}>
-            Requirements: Driver’s license + credit card deposit required.
-          </Text>
-          <Text style={styles.desc}>
-            Note: Some companies offer direct pickup shuttles from Arrivals.
-          </Text>
-        </View>
-      );
-    }
+    if (!mode) return null;
+
+    if (loading) return <ActivityIndicator size="large" color="#2563eb" />;
+    if (error) return <Text style={{ color: "red" }}>{error}</Text>;
+    if (!data) return null;
+
     return (
       <View style={styles.cardDetails}>
-        <Text style={styles.cardTitle}>Family / Friend Pickup</Text>
-        <Text style={styles.desc}>
-          Pickup Location: Passenger Pickup Area, Level 1 Arrivals. 🚙
-        </Text>
-        <Text style={styles.desc}>
-          Wait Zones: Drivers can wait up to 15 minutes for free in the
-          short-term parking lot.
-        </Text>
-        <Text style={styles.desc}>
-          Meet Point: Near baggage claim exit, Door 6. Look for “Passenger
-          Pickup” signs.
-        </Text>
-        <Text style={styles.desc}>
-          Pro Tip: Call or text your ride as soon as you collect baggage to
-          avoid delays.
-        </Text>
+        <Text style={styles.cardTitle}>{data.title}</Text>
+        {data.details.map((line, idx) => (
+          <Text key={idx} style={styles.desc}>
+            {line}
+          </Text>
+        ))}
       </View>
     );
   }
@@ -157,9 +120,7 @@ export default function TransportOptionsScreen({ route, navigation }: Props) {
     {
       key: "friend",
       label: "Friend / Family",
-      icon: (
-        <MaterialCommunityIcons name="account-group" size={30} color="#2563eb" />
-      ),
+      icon: <MaterialCommunityIcons name="account-group" size={30} color="#2563eb" />,
     },
   ];
 
@@ -168,6 +129,9 @@ export default function TransportOptionsScreen({ route, navigation }: Props) {
       <Text style={styles.title}>Transport Options</Text>
       <Text style={styles.sub}>
         {departCity || "Origin"} → {destCity || "Destination"}
+      </Text>
+      <Text style={styles.info}>
+        Tap "Arrived at Destination" to skip, or choose an option to view details.
       </Text>
 
       <View style={styles.optionsGrid}>
@@ -208,7 +172,8 @@ export default function TransportOptionsScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: "#fff" },
   title: { fontSize: 24, fontWeight: "700", textAlign: "center", marginTop: 10 },
-  sub: { color: "#6b7280", marginTop: 4, marginBottom: 20, textAlign: "center" },
+  sub: { color: "#6b7280", marginTop: 4, marginBottom: 10, textAlign: "center" },
+  info: { color: "#374151", fontSize: 14, textAlign: "center", marginBottom: 20 },
   optionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -264,9 +229,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-
-
-
-
-

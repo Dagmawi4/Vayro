@@ -1,5 +1,5 @@
 // src/screens/ProfileScreen.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,29 +11,49 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
 
-// ✅ Import local profile image from assets
+// ✅ Import your personal profile image
 import profilePic from "../../assets/Profile.jpeg";
+
+// ✅ Fallback avatar from the web
+const defaultAvatar = {
+  uri: "https://www.pngall.com/wp-content/uploads/5/User-Profile-PNG-Image.png",
+};
 
 export default function ProfileScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const user = {
-    name: "Dagmawi Abera",
-    email: "dagmawi.abera@outlook.com",
-    memberSince: "Joined August 2025",
-  };
+  const [user, setUser] = useState<{ name: string; email: string } | null>(
+    null
+  );
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const stored = await AsyncStorage.getItem("user");
+      if (stored) {
+        setUser(JSON.parse(stored));
+      }
+    };
+    loadUser();
+  }, []);
 
   function handleLogout() {
-    // ✅ Reset navigation stack and go to AuthScreen
+    // ✅ Clear user data on logout
+    AsyncStorage.removeItem("user");
     navigation.reset({
       index: 0,
       routes: [{ name: "Auth" }],
     });
   }
+
+  // ✅ Check if current user is YOU
+  const isDagi =
+    user?.name === "Dagmawi Abera" &&
+    user?.email === "dagmawi.abera@outlook.com";
 
   return (
     <SafeAreaView style={styles.container}>
@@ -43,11 +63,18 @@ export default function ProfileScreen() {
 
         {/* User Info Card */}
         <View style={styles.profileCard}>
-          <Image source={profilePic} style={styles.avatar} />
+          <Image
+            source={isDagi ? profilePic : defaultAvatar}
+            style={styles.avatar}
+          />
           <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{user.name}</Text>
-            <Text style={styles.email}>{user.email}</Text>
-            <Text style={styles.memberSince}>{user.memberSince}</Text>
+            <Text style={styles.name}>{user?.name || "Guest User"}</Text>
+            <Text style={styles.email}>
+              {user?.email || "guest@example.com"}
+            </Text>
+            <Text style={styles.memberSince}>
+              {isDagi ? "Joined August 2025" : "New Member"}
+            </Text>
           </View>
         </View>
 
@@ -183,7 +210,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProfileScreen;
+
 
 
 

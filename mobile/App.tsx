@@ -3,6 +3,7 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 // Screens
@@ -18,6 +19,7 @@ import PrefsScreen from "./src/screens/PrefsScreen";
 import CarTripScreen from "./src/screens/CarTripScreen";
 import TripPlanScreen from "./src/screens/TripPlanScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
+import SavedTripDetailsScreen from "./src/screens/SavedTripDetailsScreen";
 
 // ✅ Profile flow new screens
 import EditProfileScreen from "./src/screens/EditProfileScreen";
@@ -32,8 +34,9 @@ import FlightFormScreen from "./src/screens/FlightFormScreen";
 import FlightResultsScreen from "./src/screens/FlightResultsScreen";
 import FlightDetailsScreen from "./src/screens/FlightDetailsScreen";
 
-// ✅ Vira chat screen
+// ✅ Vira chat screens
 import ViraChatScreen from "./src/screens/ViraChatScreen";
+import ViraConversationsScreen from "./src/screens/ViraConversationsScreen"; // 🔥 new screen
 
 // ✅ Stack Route types
 export type RootStackParamList = {
@@ -42,6 +45,7 @@ export type RootStackParamList = {
   Signup: undefined;
   MainTabs: { screen?: keyof TabParamList };
   AddTrip: undefined;
+
   Airport: {
     departCountry: string;
     departCity: string;
@@ -49,16 +53,23 @@ export type RootStackParamList = {
     destCity: string;
     mode: "air" | "car";
   };
+
   CarTrip: { city: string };
+
   TransportOptions: {
     departCountry: string;
     departCity: string;
     destCountry: string;
     destCity: string;
     airport: string;
+    airportCity?: string;
+    airportCountry?: string;
     destination: string;
+    undecided?: boolean;
+    arrivalTime: string;
     mode?: string;
   };
+
   PrefsScreen: {
     departCountry: string;
     departCity: string;
@@ -66,6 +77,7 @@ export type RootStackParamList = {
     destCity: string;
     mode: string;
   };
+
   TripPlan: {
     departCountry: string;
     departCity: string;
@@ -81,6 +93,16 @@ export type RootStackParamList = {
     commitments: string[];
     visitedBefore: string[];
     tripDates: string[];
+  };
+
+  SavedTripDetails: {
+    id: number;
+    destCity: string;
+    destCountry: string;
+    duration: string;
+    tripDates: string[];
+    plan: any;
+    budgetSummary: any;
   };
 
   // ✅ Flights flow
@@ -111,7 +133,8 @@ export type RootStackParamList = {
   AboutApp: undefined;
 
   // ✅ Vira chat
-  ViraChat: undefined;
+  ViraChat: { convoId?: string }; // pass convoId when opening existing convo
+  ViraConversations: undefined;
 };
 
 // ✅ Tab types
@@ -157,33 +180,71 @@ function MainTabs() {
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Auth" component={AuthScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Signup" component={SignupScreen} />
-        <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Navigator
+        screenOptions={({ navigation }) => ({
+          headerShown: true,
+          headerTitleAlign: "center",
+          headerTintColor: "#2563eb",
+          headerLeft: () => (
+            <Pressable onPress={() => navigation.goBack()} style={{ paddingHorizontal: 8 }}>
+              <Ionicons name="arrow-back" size={22} color="#2563eb" />
+            </Pressable>
+          ),
+          headerRight: () => (
+            <Pressable
+              onPress={() => navigation.navigate("MainTabs", { screen: "Home" })}
+              style={{ paddingHorizontal: 8 }}
+            >
+              <Ionicons name="home" size={22} color="#2563eb" />
+            </Pressable>
+          ),
+        })}
+      >
+        {/* Auth flow */}
+        <Stack.Screen name="Auth" component={AuthScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
+
+        {/* Tabs */}
+        <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+
+        {/* Other screens */}
         <Stack.Screen name="AddTrip" component={AddTripScreen} />
         <Stack.Screen name="Airport" component={AirportScreen} />
         <Stack.Screen name="TransportOptions" component={TransportOptionsScreen} />
         <Stack.Screen name="PrefsScreen" component={PrefsScreen} />
         <Stack.Screen name="CarTrip" component={CarTripScreen} />
         <Stack.Screen name="TripPlan" component={TripPlanScreen} />
+        <Stack.Screen name="SavedTripDetails" component={SavedTripDetailsScreen} />
 
-        {/* ✅ Flights flow */}
+        {/* Flights */}
         <Stack.Screen name="FlightForm" component={FlightFormScreen} />
         <Stack.Screen name="FlightResults" component={FlightResultsScreen} />
         <Stack.Screen name="FlightDetails" component={FlightDetailsScreen} />
 
-        {/* ✅ Profile flow */}
+        {/* Profile */}
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
         <Stack.Screen name="AboutApp" component={AboutAppScreen} />
 
-        {/* ✅ Vira Chat */}
-        <Stack.Screen name="ViraChat" component={ViraChatScreen} />
+        {/* Vira Chat */}
+        <Stack.Screen
+          name="ViraConversations"
+          component={ViraConversationsScreen}
+          options={{ title: "Vira Chats" }}
+        />
+        <Stack.Screen
+          name="ViraChat"
+          component={ViraChatScreen}
+          options={{ title: "Chat with Vira" }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
+
+
+

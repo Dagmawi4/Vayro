@@ -11,40 +11,9 @@ import { Dropdown } from "react-native-element-dropdown";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../App";
+import { Country, City } from "country-state-city";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AddTrip">;
-
-const countries = [
-  { label: "United States", value: "USA" },
-  { label: "Canada", value: "Canada" },
-  { label: "Ethiopia", value: "Ethiopia" },
-  { label: "France", value: "France" },
-
-];
-
-const cities = {
-  USA: [
-    { label: "New York", value: "New York" },
-    { label: "Los Angeles", value: "Los Angeles" },
-    { label: "Chicago", value: "Chicago" },
-     { label: "Mankato", value: "Mankato" },
-  ],
-  Canada: [
-    { label: "Toronto", value: "Toronto" },
-    { label: "Vancouver", value: "Vancouver" },
-    { label: "Montreal", value: "Montreal" },
-  ],
-  Ethiopia: [
-    { label: "Addis Ababa", value: "Addis Ababa" },
-    { label: "Dire Dawa", value: "Dire Dawa" },
-    { label: "Mekelle", value: "Mekelle" },
-  ],
-  France: [
-    { label: "Paris", value: "Paris" },
-    { label: "Lyon", value: "Lyon" },
-    { label: "Marseille", value: "Marseille" },
-  ],
-};
 
 export default function AddTripScreen({ navigation }: Props) {
   const [departCountry, setDepartCountry] = useState<string | null>(null);
@@ -53,13 +22,25 @@ export default function AddTripScreen({ navigation }: Props) {
   const [destCity, setDestCity] = useState<string | null>(null);
   const [mode, setMode] = useState<"air" | "car" | null>(null);
 
+  // Get all countries dynamically
+  const countries = Country.getAllCountries().map((c) => ({
+    label: c.name,
+    value: c.isoCode,
+  }));
+
+  // Get cities dynamically based on country ISO code
+  const getCitiesForCountry = (isoCode: string) =>
+    City.getCitiesOfCountry(isoCode).map((city) => ({
+      label: city.name,
+      value: city.name,
+    }));
+
   function handleNext() {
     if (!departCountry || !departCity || !destCountry || !destCity || !mode) {
       Alert.alert("Missing Info", "Please complete all fields.");
       return;
     }
 
-    // Prevent cross-country car trips
     if (mode === "car" && departCountry !== destCountry) {
       Alert.alert(
         "Invalid Trip",
@@ -124,7 +105,7 @@ export default function AddTripScreen({ navigation }: Props) {
         selectedTextStyle={styles.selectedTextStyle}
         inputSearchStyle={styles.inputSearchStyle}
         iconStyle={styles.iconStyle}
-        data={departCountry ? cities[departCountry] || [] : []}
+        data={departCountry ? getCitiesForCountry(departCountry) : []}
         search
         maxHeight={300}
         labelField="label"
@@ -171,7 +152,7 @@ export default function AddTripScreen({ navigation }: Props) {
         selectedTextStyle={styles.selectedTextStyle}
         inputSearchStyle={styles.inputSearchStyle}
         iconStyle={styles.iconStyle}
-        data={destCountry ? cities[destCountry] || [] : []}
+        data={destCountry ? getCitiesForCountry(destCountry) : []}
         search
         maxHeight={300}
         labelField="label"
@@ -263,6 +244,7 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
 });
+
 
 
 

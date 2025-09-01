@@ -1,4 +1,5 @@
-import React from "react";
+// src/screens/HomeScreen.tsx
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,8 +11,31 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function HomeScreen({ navigation }) {
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const stored = await AsyncStorage.getItem("user");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (
+          parsed.name === "Dagmawi Abera" &&
+          parsed.email === "dagmawi.abera@outlook.com"
+        ) {
+          setUserName("Dagi"); // ✅ nickname for you
+        } else {
+          setUserName(parsed.name || "Guest");
+        }
+      } else {
+        setUserName("Guest");
+      }
+    };
+    loadUser();
+  }, []);
+
   const topPicks = [
     { city: "Miami", desc: "Beaches & Nightlife 🌴", img: "https://picsum.photos/400/250?1" },
     { city: "Paris", desc: "Love & Lights 🗼", img: "https://picsum.photos/400/250?2" },
@@ -25,8 +49,10 @@ export default function HomeScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Greeting */}
-        <Text style={styles.welcome}>Welcome back, Dagi 👋</Text>
-        <Text style={styles.subtitle}>Ready for your next adventure? Let’s explore!</Text>
+        <Text style={styles.welcome}>Welcome back, {userName} 👋</Text>
+        <Text style={styles.subtitle}>
+          Ready for your next adventure? Let’s explore!
+        </Text>
 
         {/* Top Picks Carousel */}
         <Text style={styles.sectionTitle}>✨ Top Picks for You</Text>
@@ -74,7 +100,7 @@ export default function HomeScreen({ navigation }) {
       {/* 🆕 Floating Vira Button */}
       <TouchableOpacity
         style={styles.viraFab}
-        onPress={() => navigation.navigate("ViraChat")} // ✅ make sure ViraChatScreen is in your stack
+        onPress={() => navigation.navigate("ViraChat")}
       >
         <Ionicons name="sparkles" size={26} color="#fff" />
       </TouchableOpacity>
@@ -101,7 +127,12 @@ const styles = StyleSheet.create({
   cardCity: { fontSize: 16, fontWeight: "600", marginTop: 6, marginLeft: 6 },
   cardDesc: { fontSize: 12, color: "#6b7280", marginLeft: 6, marginBottom: 8 },
   moodContainer: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 },
-  moodButton: { backgroundColor: "#e0f2fe", paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20 },
+  moodButton: {
+    backgroundColor: "#e0f2fe",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
   moodText: { fontSize: 14, color: "#0369a1", fontWeight: "600" },
   cardRow: { flexDirection: "row", gap: 12, marginBottom: 20 },
   smallCard: {
@@ -138,5 +169,3 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
 });
-
-

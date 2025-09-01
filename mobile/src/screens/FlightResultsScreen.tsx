@@ -32,8 +32,8 @@ const FlightResultsScreen = ({ route, navigation }) => {
         const { aiSummary } = await searchFlightsAPI({
           departure,
           destination,
-          departureDate: departureDate?.split("T")[0],
-          returnDate: returnDate ? returnDate?.split("T")[0] : null,
+          departureDate: departureDate || null,
+          returnDate: returnDate || null,
           passengers,
           budget,
           allowLayover,
@@ -57,8 +57,8 @@ const FlightResultsScreen = ({ route, navigation }) => {
         id: Date.now(),
         departure,
         destination,
-        departureDate: new Date(departureDate).toDateString(),
-        returnDate: returnDate ? new Date(returnDate).toDateString() : "One Way",
+        departureDate: departureDate || null,
+        returnDate: returnDate || null,
         summary: aiSummary,
       };
 
@@ -92,8 +92,8 @@ const FlightResultsScreen = ({ route, navigation }) => {
           {departure} → {destination}
         </Text>
         <Text style={styles.date}>
-          {new Date(departureDate).toDateString()}{" "}
-          {returnDate ? ` - ${new Date(returnDate).toDateString()}` : "(One Way)"}
+          {departureDate || ""}
+          {returnDate ? ` - ${returnDate}` : ""}
         </Text>
       </View>
 
@@ -105,8 +105,8 @@ const FlightResultsScreen = ({ route, navigation }) => {
             flight: {
               departure,
               destination,
-              departureDate,
-              returnDate,
+              departureDate: departureDate || null,
+              returnDate: returnDate || null,
               summary: aiSummary,
             },
           })
@@ -152,6 +152,8 @@ const styles = StyleSheet.create({
 });
 
 export default FlightResultsScreen;
+
+
 
 
 
